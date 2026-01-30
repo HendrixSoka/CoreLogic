@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     IMAGE_GET_DIR: str = "problema_imagenes"
     USER_GET_DIR: str = "fotos_usuarios"
     DATABASE_URL: str
+    CORS_ORIGINS : str
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()

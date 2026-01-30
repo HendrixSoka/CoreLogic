@@ -10,8 +10,10 @@ import {
   useToast,
   SimpleGrid,
   VStack,
+  FormErrorMessage,
 } from '@chakra-ui/react';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import { crearProblema } from '../api/problemService';
 import { getUserDataFromToken } from '../api/auth';
@@ -20,6 +22,7 @@ import BlockEditor from '../components/BlockEditor';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function UploadProblemPage() {
+  const [errores, setErrores] = useState({});
   const [titulo, setTitulo] = useState('');
   const [enunciado, setEnunciado] = useState([
     { id: uuidv4(), tipo: 'texto', contenido: '' },
@@ -34,7 +37,7 @@ export default function UploadProblemPage() {
   const [archivo, setArchivo] = useState([]);
   const toast = useToast();
   const user = getUserDataFromToken();
-
+  const navigate = useNavigate();
   useEffect(() => {
     const cargar = async () => {
       const data = await obtenerCarreras();
@@ -43,6 +46,12 @@ export default function UploadProblemPage() {
     cargar();
   }, []);
 
+  const limpiarError = (campo) => {
+    setErrores(prev => ({
+      ...prev,
+      [campo]: ''
+    }));
+  };
   const handleCarreraSelect = async (opcion) => {
     setCarreraSeleccionada(opcion);
     const materiasRaw = await obtenerMateriasPorCarrera(opcion.value);
@@ -55,6 +64,26 @@ export default function UploadProblemPage() {
   };
 
   const handleSubmit = async () => {
+    if (!user || !user.id) {
+      toast({
+        title: 'Error crítico',
+        description: 'Usuario no autenticado. Por favor inicia sesión.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true
+      });
+      return;
+    }
+    if (!validarFormulario()) {
+      toast({
+        title: 'Error',
+        description: 'Por favor completa todos los campos obligatorios',
+        status: 'error',
+        duration: 3000,
+        isClosable: true
+      });
+      return;
+    }
     const enunciadoLimpio = enunciado.map(({ id, preview, ...resto }) => resto);
 
     const problemaData = {
@@ -69,13 +98,14 @@ export default function UploadProblemPage() {
     };
 
     try {
-      await crearProblema(problemaData, archivo);
+      const problemaCreado = await crearProblema(problemaData, archivo);
       toast({
         title: 'Éxito',
         description: 'Problema subido exitosamente',
         status: 'success',
         duration: 3000,
         isClosable: true,
+        onCloseComplete: () => navigate(`/ejercicio/${problemaCreado.id_problema}`)
       });
     } catch (error) {
       toast({
@@ -88,7 +118,32 @@ export default function UploadProblemPage() {
       console.error(error);
     }
   };
+  const validarFormulario = () => {
+    const nuevosErrores = {};
 
+    if (!titulo.trim()) nuevosErrores.titulo = "El título es obligatorio";
+    if (!carreraSeleccionada) nuevosErrores.carrera = "Selecciona una carrera";
+    if (!materiaSeleccionada) nuevosErrores.materia = "Selecciona una materia";
+    if (!tipo) nuevosErrores.tipo = "Selecciona un tipo";
+    if (tipo !== 'Propio' && !propietario.trim()) {
+      nuevosErrores.propietario = "El propietario es obligatorio";
+    }
+    if (!dificultad) nuevosErrores.dificultad = "Selecciona dificultad";
+    if (!enunciado || Object.keys(enunciado).length === 0) {
+      nuevosErrores.enunciado = "El enunciado es obligatorio";
+    }
+
+    setErrores(nuevosErrores);
+    return Object.keys(nuevosErrores).length === 0;
+  };
+
+  const handleTipoChange = (value) => {
+    setTipo(value);
+    if (value === 'Propio') {
+      setPropietario(''); 
+      limpiarError('propietario'); 
+    }
+  };
   return (
     <Box maxW="1200px" mx="auto" py={10} px={6}>
       <Heading size="lg" mb={8} textAlign="center">
@@ -99,43 +154,46 @@ export default function UploadProblemPage() {
         {/* Columna izquierda: Datos */}
         <Box bg="gray.50" p={6} rounded="md" boxShadow="sm">
           <VStack spacing={4}>
-            <FormControl>
+            <FormControl isInvalid={errores.titulo}>
               <FormLabel>Título</FormLabel>
               <Input
                 placeholder="Ej. Integrales por partes"
                 value={titulo}
-                onChange={(e) => setTitulo(e.target.value)}
+                onChange={(e) => {setTitulo(e.target.value); limpiarError('titulo');}}
                 variant="filled"
               />
+              <FormErrorMessage>{errores.titulo}</FormErrorMessage>
             </FormControl>
 
-            <FormControl>
+            <FormControl isInvalid={errores.carrera}>
               <FormLabel>Carrera</FormLabel>
               <Select
                 options={carreras}
                 value={carreraSeleccionada}
-                onChange={handleCarreraSelect}
+                onChange={(selected) => {handleCarreraSelect(selected); limpiarError('carrera');}}
                 placeholder="Selecciona una carrera"
               />
+              <FormErrorMessage>{errores.carrera}</FormErrorMessage>
             </FormControl>
 
             {materias.length > 0 && (
-              <FormControl>
+              <FormControl isInvalid={errores.materia}>
                 <FormLabel>Materia</FormLabel>
                 <Select
                   options={materias}
                   value={materiaSeleccionada}
-                  onChange={setMateriaSeleccionada}
+                  onChange={(selected) => {setMateriaSeleccionada(selected); limpiarError('materia');}}
                   placeholder="Selecciona una materia"
                 />
+                <FormErrorMessage>{errores.materia}</FormErrorMessage>
               </FormControl>
             )}
 
-            <FormControl>
+            <FormControl isInvalid={errores.tipo}>
               <FormLabel>Tipo</FormLabel>
               <ChakraSelect
                 value={tipo}
-                onChange={(e) => setTipo(e.target.value)}
+                onChange={(e) => {handleTipoChange(e.target.value); limpiarError('tipo');}}
                 placeholder="Selecciona tipo"
                 variant="filled"
               >
@@ -144,25 +202,27 @@ export default function UploadProblemPage() {
                 <option value="Practica">Práctica</option>
                 <option value="Propio">Propio</option>
               </ChakraSelect>
+              <FormErrorMessage>{errores.tipo}</FormErrorMessage>
             </FormControl>
 
             {tipo !== 'Propio' && (
-              <FormControl>
+              <FormControl isInvalid={errores.propietario}>
                 <FormLabel>Propietario</FormLabel>
                 <Input
                   placeholder="Nombre del propietario"
                   value={propietario}
-                  onChange={(e) => setPropietario(e.target.value)}
+                  onChange={(e) => {setPropietario(e.target.value); limpiarError('propietario');}}
                   variant="filled"
                 />
+                <FormErrorMessage>{errores.propietario}</FormErrorMessage>
               </FormControl>
             )}
 
-            <FormControl>
+            <FormControl isInvalid={errores.dificultad}>
               <FormLabel>Dificultad</FormLabel>
               <ChakraSelect
                 value={dificultad}
-                onChange={(e) => setDificultad(e.target.value)}
+                onChange={(e) => {setDificultad(e.target.value); limpiarError('dificultad');}}
                 placeholder="Selecciona dificultad"
                 variant="filled"
               >
@@ -170,6 +230,7 @@ export default function UploadProblemPage() {
                 <option value="Media">Media</option>
                 <option value="Dificil">Difícil</option>
               </ChakraSelect>
+              <FormErrorMessage>{errores.dificultad}</FormErrorMessage>
             </FormControl>
           </VStack>
         </Box>

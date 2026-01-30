@@ -15,7 +15,6 @@ import {
   useColorModeValue,
   useToast,
 } from '@chakra-ui/react';
-import { toast } from 'react-toastify';
 
 export default function LoginPage() {
   const navigate = useNavigate();

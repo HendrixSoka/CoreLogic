@@ -4,5 +4,8 @@ __pycache__/
 venv/
 *.log
 .DS_Store
-static/
-problema_imagenes/
+static/fotos_usuarios/*
+!static/fotos_usuarios/.gitkeep
+static/problema_imagenes/*
+!static/problema_imagenes/.gitkeep
+Dockerfile

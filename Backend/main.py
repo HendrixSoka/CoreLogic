@@ -28,9 +28,7 @@ from config import settings
 
 security = HTTPBearer()
 app = FastAPI()
-origins = [
-    "http://localhost:5173", 
-]
+origins = settings.CORS_ORIGINS.split(",")
 
 app.add_middleware(
     CORSMiddleware,

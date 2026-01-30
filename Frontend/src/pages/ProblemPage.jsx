@@ -15,7 +15,7 @@ import {
 import { obtenerProblemaPorId } from '../api/problemService';
 import { getUserDataFromToken } from '../api/auth';
 import BlockRenderer from '../components/BlockRenderer';
-import SolucionList from '../components/solutionList';
+import SolucionList from '../components/SolutionList';
 
 export default function ProblemPage() {
   const { id_problema } = useParams();

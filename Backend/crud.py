@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from jose import jwt
 import os
 from utils import _save_single_upload_file,_validate_image_and_get_extension,_update_enunciado,_process_image_blocks
-
+from pathlib import Path
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # Usuario
 def crear_token_de_acceso(data: dict, expires_delta: timedelta = None):
@@ -29,11 +29,11 @@ def crear_token_de_acceso(data: dict, expires_delta: timedelta = None):
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 def create_usuario(session: Session, usuario_data: UsuarioCreate):
-    hashed_password = pwd_context.hash(usuario_data.contraseña)
+    hashed_password = pwd_context.hash(usuario_data.password)
 
     user = Usuario(
-        nombre=usuario_data.nombre,
-        correo=usuario_data.correo,
+        nombre=usuario_data.name,
+        correo=usuario_data.email,
         contraseña=hashed_password,
         aportaciones=0,
         publicaciones=0,
@@ -458,7 +458,9 @@ def dislike_solucion(session: Session, id_solucion: int, usuario_id: int):
 
     return {"likes": likes, "dislikes": dislikes}
 
-with open("./static/Carreras.json", encoding="utf-8") as f:
+BASE_DIR = Path(__file__).resolve().parent
+
+with open(BASE_DIR / "static" / "Carreras.json", encoding="utf-8") as f:
     DATA = json.load(f)
 
 def obtener_carreras():

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { obtenerProblemasPorUsuario } from '../api/problemService';
 import { getUserDataFromToken, getMyUser } from '../api/auth';
-import SolucionList from '../components/solutionList';
-import ProblemTable from '../components/problemTable';
+import SolucionList from '../components/SolutionList';
+import ProblemTable from '../components/ProblemTable';
 import ModifyUser from '../components/ModifyUser';
 import { getImageUrl } from "../api/problemService"; 
 import { toast } from 'react-toastify';

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import { getUserDataFromToken } from '../api/auth';
 import { obtenerSolucionPorId, editarSolucion } from '../api/solutionService';
 import BlockEditor from '../components/BlockEditor';
