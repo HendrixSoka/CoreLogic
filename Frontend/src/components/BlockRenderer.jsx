@@ -6,7 +6,6 @@ import BloqueCodigo from './blocks/BloqueCodigo';
 import BloqueEcuacion from './blocks/BloqueEcuacion';
 import BloqueLista from './blocks/BloqueLista';
 import BloqueTabla from './blocks/BloqueTabla';
-import { getImageUrl } from '../api/problemService';
 
 const BlockRenderer = ({ contenido = [] }) => {
   const renderBlock = (bloque, index) => {
@@ -20,7 +19,7 @@ const BlockRenderer = ({ contenido = [] }) => {
           <BloqueImagen
             key={index}
             editable={false}
-            url={getImageUrl(bloque.url)}
+            url={bloque.url}
           />
         );
       case 'codigo':

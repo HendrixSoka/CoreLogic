@@ -11,6 +11,7 @@ class Usuario(SQLModel, table=True):
     nombre: str
     correo: str
     contraseña: str
+    verificado: bool = Field(default=False)
     aportaciones: int = 0
     publicaciones: int = 0
     foto: Optional[str] = None

@@ -16,12 +16,13 @@ import Select from 'react-select';
 import { obtenerCarreras, obtenerMateriasPorCarrera } from '../api/options';
 import { getUserDataFromToken } from '../api/auth';
 import { obtenerProblemaPorId, editarProblema } from '../api/problemService';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import BlockEditor from '../components/BlockEditor';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function ModifyProblemPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const toast = useToast();
   const user = getUserDataFromToken();
 
@@ -55,14 +56,18 @@ export default function ModifyProblemPage() {
         const opcionesCarrera = listaCarreras.map(c => ({ label: c.nombre, value: c.id }));
         setCarreras(opcionesCarrera);
 
-        const carreraSel = opcionesCarrera.find(c => c.value === problema.carrera);
+        const carreraSel = opcionesCarrera.find(
+          (c) => String(c.value) === String(problema.carrera) || c.label === problema.carrera
+        );
         setCarreraSeleccionada(carreraSel);
 
         if (carreraSel) {
           const materiasRaw = await obtenerMateriasPorCarrera(carreraSel.value);
           const opcionesMaterias = materiasRaw.map(m => ({ label: m, value: m }));
           setMaterias(opcionesMaterias);
-          const materiaSel = opcionesMaterias.find(m => m.value === problema.materia);
+          const materiaSel = opcionesMaterias.find(
+            (m) => m.value === problema.materia || m.label === problema.materia
+          );
           setMateriaSeleccionada(materiaSel);
         }
       } catch (error) {
@@ -87,8 +92,49 @@ export default function ModifyProblemPage() {
     setArchivo(prev => [...prev, file]);
   };
 
+  const normalizarBloque = (bloque) => {
+    switch (bloque.tipo) {
+      case 'imagen':
+        return {
+          tipo: 'imagen',
+          nombre: bloque.nombre,
+          url: bloque.url,
+        };
+      case 'texto':
+        return {
+          tipo: 'texto',
+          contenido: bloque.contenido,
+        };
+      case 'codigo':
+        return {
+          tipo: 'codigo',
+          lenguaje: bloque.lenguaje,
+          contenido: bloque.contenido,
+        };
+      case 'ecuacion':
+        return {
+          tipo: 'ecuacion',
+          contenido: bloque.contenido,
+        };
+      case 'lista':
+        return {
+          tipo: 'lista',
+          estilo: bloque.estilo,
+          items: bloque.items,
+        };
+      case 'tabla':
+        return {
+          tipo: 'tabla',
+          encabezados: bloque.encabezados,
+          filas: bloque.filas,
+        };
+      default:
+        return null;
+    }
+  };
+
   const handleSubmit = async () => {
-    const enunciadoLimpio = enunciado.map(({ id,preview , ...resto }) => resto);
+    const enunciadoLimpio = enunciado.map(normalizarBloque).filter(Boolean);
 
     const problemaData = {
       titulo,
@@ -107,6 +153,8 @@ export default function ModifyProblemPage() {
         title: 'Éxito',
         description: 'Problema modificado correctamente',
         status: 'success',
+        isClosable: true,
+        onCloseComplete: () => navigate(`/ejercicio/${id}`),
       });
     } catch (error) {
       toast({

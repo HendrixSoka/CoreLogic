@@ -37,18 +37,27 @@ const BloqueTabla = ({ encabezados, filas, editable, onChange }) => {
   };
 
   return (
-    <Box overflowX="auto" borderWidth="1px" borderRadius="md" p={3}>
-      <Table variant="simple" size="sm">
+    <Box overflowX="auto" borderWidth="1px" borderColor="gray.300" borderRadius="md" p={3} bg="white">
+      <Table variant="unstyled" size="sm" borderCollapse="collapse" width="100%">
         <Thead bg="gray.100">
           <Tr>
             {encabezados.map((head, i) => (
-              <Th key={i}>
+              <Th
+                key={i}
+                border="1px solid"
+                borderColor="gray.400"
+                px={2}
+                py={2}
+                minW="140px"
+                textTransform="none"
+              >
                 {editable ? (
                   <Input
                     value={head}
                     onChange={(e) => handleEncabezadoChange(i, e.target.value)}
                     size="sm"
-                    borderRadius="md"
+                    borderRadius="sm"
+                    borderColor="gray.500"
                     px={2}
                   />
                 ) : (
@@ -62,13 +71,14 @@ const BloqueTabla = ({ encabezados, filas, editable, onChange }) => {
           {filas.map((fila, i) => (
             <Tr key={i}>
               {fila.map((celda, j) => (
-                <Td key={j}>
+                <Td key={j} border="1px solid" borderColor="gray.400" px={2} py={2} minW="140px">
                   {editable ? (
                     <Input
                       value={celda}
                       onChange={(e) => handleCeldaChange(i, j, e.target.value)}
                       size="sm"
-                      borderRadius="md"
+                      borderRadius="sm"
+                      borderColor="gray.400"
                       px={2}
                     />
                   ) : (

@@ -47,8 +47,49 @@ export default function ModifySolutionPage() {
     setArchivos((prev) => [...prev, archivo]);
   };
 
+  const normalizarBloque = (bloque) => {
+    switch (bloque.tipo) {
+      case 'imagen':
+        return {
+          tipo: 'imagen',
+          nombre: bloque.nombre,
+          url: bloque.url,
+        };
+      case 'texto':
+        return {
+          tipo: 'texto',
+          contenido: bloque.contenido,
+        };
+      case 'codigo':
+        return {
+          tipo: 'codigo',
+          lenguaje: bloque.lenguaje,
+          contenido: bloque.contenido,
+        };
+      case 'ecuacion':
+        return {
+          tipo: 'ecuacion',
+          contenido: bloque.contenido,
+        };
+      case 'lista':
+        return {
+          tipo: 'lista',
+          estilo: bloque.estilo,
+          items: bloque.items,
+        };
+      case 'tabla':
+        return {
+          tipo: 'tabla',
+          encabezados: bloque.encabezados,
+          filas: bloque.filas,
+        };
+      default:
+        return null;
+    }
+  };
+
   const handleSubmit = async () => {
-    const limpio = contenido.map(({ id,preview ,...resto }) => resto);
+    const limpio = contenido.map(normalizarBloque).filter(Boolean);
 
     const solucionData = {
       id_solucion,
@@ -63,12 +104,14 @@ export default function ModifySolutionPage() {
         title: 'Éxito',
         description: 'Solucion modificado correctamente',
         status: 'success',
+        isClosable: true,
       });
     } catch (error) {
       toast({
         title: 'Error',
         description: 'Error al modificar la solucion',
         status: 'error',
+        isClosable: true,
       });
       console.error(error);
     } finally {

@@ -70,6 +70,7 @@ class UsuarioRead(BaseModel):
     id_usuario: int
     nombre: str
     correo: str
+    verificado: bool
     foto: Optional[str]
     aportaciones: int
     publicaciones: int

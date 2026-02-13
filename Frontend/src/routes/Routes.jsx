@@ -9,6 +9,8 @@ import UserPage from '../pages/UserPage'
 import ModifyProblemPage from '../pages/ModifyProblemPage';
 import ModifySolutionPage from '../pages/ModifySolutionPage';
 import HelpPage from '../pages/HelpPage';
+import Verify from '../pages/Verify';
+import CheckEmail from '../pages/CheckEmailPage';
 export default function AppRoutes() {
   return (
       <Routes>
@@ -22,6 +24,8 @@ export default function AppRoutes() {
         <Route path="/subir-solucion/:id_problema" element={<UploadSolutionPage />} />
         <Route path="/modificar-solucion/:id_solucion" element={<ModifySolutionPage />} />
         <Route path ="/perfil" element= {<UserPage/>}/>
+        <Route path="/verify" element={<Verify />} />
+        <Route path="/check-email" element={<CheckEmail />} />
       </Routes>
   );
 }

@@ -6,12 +6,12 @@ from fastapi import Query
 from jose import JWTError, jwt
 import json
 from typing import List,Optional
-from sqlmodel import Session
+from sqlmodel import Session, select
 from database import create_db_and_tables, get_session
 from datetime import datetime, timedelta
 from crud import (
     autenticar_usuario, crear_token_de_acceso,
-    create_usuario,edit_usuario, get_usuario,
+    create_usuario,edit_usuario, get_usuario, crear_token_de_verificacion,_require_verified_user_by_id,
     create_problema, list_problemas, get_problema,edit_problema,get_problema_by_user,
     create_solucion, list_soluciones_por_problema, edit_solucion,list_soluciones_por_usuario,
     get_solucion_por_id, like_solucion, dislike_solucion,
@@ -25,6 +25,8 @@ from schema import (
 )
 import os
 from config import settings
+from model import Usuario
+from email_service import enviar_email_de_verficacion
 
 security = HTTPBearer()
 app = FastAPI()
@@ -37,16 +39,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.mount("/problema_imagenes", StaticFiles(directory=settings.IMAGE_UPLOAD_DIR), name="problema_imagenes")
-app.mount("/fotos_usuarios", StaticFiles(directory=settings.USER_PHOTOS_DIR), name="fotos_usuarios")
-
 @app.get("/")
 def read_root():
     return {"message": "Hola mundo"}
 
 @app.post("/register", response_model=UsuarioRead)
-def register(usuario: UsuarioCreate, session: Session = Depends(get_session)):
-    return create_usuario(session, usuario)
+async def register(usuario: UsuarioCreate, session: Session = Depends(get_session)):
+    return await create_usuario(session, usuario)
 
 @app.put("/usuarios/{user_id}")
 async def update_usuario(
@@ -63,9 +62,10 @@ async def update_usuario(
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-
-@app.get("/usuarios/me", response_model=UsuarioRead)
-def get_me(credentials: HTTPAuthorizationCredentials = Depends(security), session: Session = Depends(get_session)):
+def _get_usuario_from_credentials(
+    credentials: HTTPAuthorizationCredentials,
+    session: Session
+):
     token = credentials.credentials
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
@@ -88,6 +88,12 @@ def get_me(credentials: HTTPAuthorizationCredentials = Depends(security), sessio
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return usuario
 
+
+
+@app.get("/usuarios/me", response_model=UsuarioRead)
+def get_me(credentials: HTTPAuthorizationCredentials = Depends(security), session: Session = Depends(get_session)):
+    return _get_usuario_from_credentials(credentials, session)
+
 @app.post("/login", response_model=Token)
 def login(
     login_data: LoginSchema = Body(...),
@@ -100,7 +106,6 @@ def login(
             detail="Credenciales incorrectas",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
     expires = timedelta(days=30) if login_data.remember_me else timedelta(minutes=60)
     token = crear_token_de_acceso(
         data={
@@ -112,6 +117,34 @@ def login(
     
     return {"access_token": token, "token_type": "bearer"}
 
+@app.get("/verify")
+def verify_account(token: str, session: Session = Depends(get_session)):
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        correo = payload["sub"]
+    except JWTError:
+        raise HTTPException(400, "Token inválido")
+    user = session.exec(
+        select(Usuario).where(Usuario.correo == correo)
+    ).first()
+    if not user:
+        raise HTTPException(404, "Usuario no encontrado")
+    user.verificado = True
+    session.add(user)
+    session.commit()
+    return {"message": "Cuenta verificada exitosamente"}
+
+@app.post("/verify/resend")
+async def resend_verification_email(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    session: Session = Depends(get_session)
+):
+    usuario = _get_usuario_from_credentials(credentials, session)
+    if usuario.verificado:
+        return {"message": "La cuenta ya está verificada"}
+    token = crear_token_de_verificacion(usuario.correo)
+    await enviar_email_de_verficacion(usuario.correo, token)
+    return {"message": "Correo de verificación reenviado"}
 
 @app.post("/problemas/")
 async def crear_problema_endpoint(
@@ -119,6 +152,7 @@ async def crear_problema_endpoint(
     imagenes: List[UploadFile] = File([]), 
     session: Session = Depends(get_session)
 ):
+    _require_verified_user_by_id(problema_data.id_usuario, session)
     nuevo_problema = create_problema(
         session=session,
         problema_data=problema_data,
@@ -187,6 +221,7 @@ def create_solucion_endpoint(
     imagenes: List[UploadFile] = File([]),
     session: Session = Depends(get_session)
 ):
+    _require_verified_user_by_id(solucion.id_usuario, session)
     return create_solucion(session, solucion, imagenes)
 
 @app.put("/soluciones/{solucion_id}")

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState } from "react";
 import { registerUser } from "../api/auth";
+import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import {
   Box,
   Button,
@@ -13,6 +14,9 @@ import {
   useColorModeValue,
   useToast,
   FormErrorMessage,
+  IconButton,
+  InputGroup,
+  InputRightElement,
 } from "@chakra-ui/react";
 
 export default function RegisterPage() {
@@ -33,7 +37,7 @@ export default function RegisterPage() {
   const limpiarError = (campo) => {
     setErrores(prev => ({ ...prev, [campo]: "" }));
   };
-
+  const [showPassword, setShowPassword] = useState(false);
   const validarFormulario = () => {
     const nuevosErrores = {};
 
@@ -94,13 +98,15 @@ export default function RegisterPage() {
           duration: 3000,
           isClosable: true,
           position: "top",
-          onCloseComplete: () => navigate("/login")
+          onCloseComplete: () => navigate("/check-email")
         });
         
       })
       .catch((err) => {
+        const mensaje = err.response?.data?.detail || "Ocurrió un error inesperado";
         toast({
           title: "Error al registrar",
+          description: mensaje,
           status: "error",
           duration: 3000,
           isClosable: true,
@@ -169,35 +175,55 @@ export default function RegisterPage() {
           {/* Contraseña */}
           <FormControl isInvalid={errores.password}>
             <FormLabel>Contraseña</FormLabel>
-            <Input
-              type="password"
-              placeholder="Mínimo 5 caracteres"
-              value={form.password}
-              onChange={(e) => {
-                setForm({ ...form, password: e.target.value });
-                limpiarError('password');
-              }}
-            />
+
+            <InputGroup>
+              <Input
+                type={showPassword ? "text" : "password"}
+                placeholder="Mínimo 5 caracteres"
+                value={form.password}
+                onChange={(e) => {
+                  setForm({ ...form, password: e.target.value });
+                  limpiarError("password");
+                }}
+              />
+
+              <InputRightElement width="4.5rem">
+                <IconButton
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                  size="sm"
+                  variant="ghost"
+                  tabIndex={-1}
+                  onClick={() => setShowPassword(!showPassword)}
+                />
+              </InputRightElement>
+            </InputGroup>
+
             <FormErrorMessage>{errores.password}</FormErrorMessage>
-            <Text fontSize="xs" color="gray.500">
-              La contraseña debe tener mínimo 5 caracteres
-            </Text>
           </FormControl>
+
 
           {/* Confirmar contraseña */}
           <FormControl isInvalid={errores.confirmPassword}>
             <FormLabel>Confirmar Contraseña</FormLabel>
-            <Input
-              type="password"
-              placeholder="Repite la contraseña"
-              value={form.confirmPassword}
-              onChange={(e) => {
-                setForm({ ...form, confirmPassword: e.target.value });
-                limpiarError('confirmPassword');
-              }}
-            />
+
+            <InputGroup>
+              <Input
+                type={showPassword ? "text" : "password"}   // MISMO ESTADO
+                placeholder="Repite la contraseña"
+                value={form.confirmPassword}
+                onChange={(e) => {
+                  setForm({ ...form, confirmPassword: e.target.value });
+                  limpiarError("confirmPassword");
+                }}
+              />
+
+              {/* SIN BOTÓN AQUÍ */}
+            </InputGroup>
+
             <FormErrorMessage>{errores.confirmPassword}</FormErrorMessage>
           </FormControl>
+
 
           {/* Botón */}
           <Button colorScheme="blue" onClick={handleRegister} mt={2}>

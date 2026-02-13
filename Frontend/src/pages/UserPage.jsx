@@ -4,7 +4,6 @@ import { getUserDataFromToken, getMyUser } from '../api/auth';
 import SolucionList from '../components/SolutionList';
 import ProblemTable from '../components/ProblemTable';
 import ModifyUser from '../components/ModifyUser';
-import { getImageUrl } from "../api/problemService"; 
 import { toast } from 'react-toastify';
 import {
   Box,
@@ -100,7 +99,7 @@ export default function UserPage() {
                 justify="center"
               >
                 <Image
-                  src={getImageUrl(user.foto)}
+                  src={user.foto}
                   alt="Foto de perfil"
                   boxSize="100%"
                   objectFit="cover"

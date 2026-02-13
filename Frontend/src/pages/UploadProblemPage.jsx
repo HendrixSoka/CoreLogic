@@ -63,6 +63,52 @@ export default function UploadProblemPage() {
     setArchivo((prev) => [...prev, file]);
   };
 
+  const normalizarBloque = (bloque) => {
+    switch (bloque.tipo) {
+      case 'imagen':
+        return {
+          tipo: 'imagen',
+          nombre: bloque.nombre,
+          url: bloque.url, 
+        };
+
+      case 'texto':
+        return {
+          tipo: 'texto',
+          contenido: bloque.contenido,
+        };
+
+      case 'codigo':
+        return {
+          tipo: 'codigo',
+          lenguaje: bloque.lenguaje,
+          contenido: bloque.contenido,
+        };
+
+      case 'ecuacion':
+        return {
+          tipo: 'ecuacion',
+          contenido: bloque.contenido,
+        };
+
+      case 'lista':
+        return {
+          tipo: 'lista',
+          estilo: bloque.estilo,
+          items: bloque.items,
+        };
+
+      case 'tabla':
+        return {
+          tipo: 'tabla',
+          encabezados: bloque.encabezados,
+          filas: bloque.filas,
+        };
+
+      default:
+        return null;
+    }
+  };
   const handleSubmit = async () => {
     if (!user || !user.id) {
       toast({
@@ -84,8 +130,19 @@ export default function UploadProblemPage() {
       });
       return;
     }
-    const enunciadoLimpio = enunciado.map(({ id, preview, ...resto }) => resto);
+    const enunciadoLimpio = enunciado.map(normalizarBloque).filter(Boolean);
 
+    console.log('Datos a enviar:', {
+      titulo,
+      enunciado: enunciadoLimpio,
+      carrera: carreraSeleccionada?.label,
+      materia: materiaSeleccionada?.value,
+      tipo,
+      dificultad,
+      propietario: propietario || user.nombre,
+      id_usuario: user.id,
+    });
+    console.log('Archivos a enviar:', archivo);
     const problemaData = {
       titulo,
       enunciado: JSON.stringify(enunciadoLimpio),
@@ -108,9 +165,10 @@ export default function UploadProblemPage() {
         onCloseComplete: () => navigate(`/ejercicio/${problemaCreado.id_problema}`)
       });
     } catch (error) {
+      const msg = error.response?.data?.detail;
       toast({
         title: 'Error',
-        description: 'Error al subir el problema',
+        description: msg || 'Error al subir el problema',
         status: 'error',
         duration: 3000,
         isClosable: true,

@@ -20,6 +20,7 @@ from jose import jwt
 import os
 from utils import _save_single_upload_file,_validate_image_and_get_extension,_update_enunciado,_process_image_blocks
 from pathlib import Path
+from email_service import enviar_email_de_verficacion
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # Usuario
 def crear_token_de_acceso(data: dict, expires_delta: timedelta = None):
@@ -28,7 +29,25 @@ def crear_token_de_acceso(data: dict, expires_delta: timedelta = None):
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
-def create_usuario(session: Session, usuario_data: UsuarioCreate):
+def crear_token_de_verificacion(email: str):
+
+    payload = {
+        "sub": email,
+        "exp": datetime.utcnow() + timedelta(hours=24)
+    }
+
+    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+async def create_usuario(session: Session, usuario_data: UsuarioCreate):
+    existing = session.exec(
+        select(Usuario).where(Usuario.correo == usuario_data.email)
+    ).first()
+
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail="El correo ya está registrado"
+        )
     hashed_password = pwd_context.hash(usuario_data.password)
 
     user = Usuario(
@@ -39,10 +58,13 @@ def create_usuario(session: Session, usuario_data: UsuarioCreate):
         publicaciones=0,
         foto=None 
     )
+    
 
     session.add(user)
     session.commit()
     session.refresh(user)
+    token = crear_token_de_verificacion(user.correo)
+    await enviar_email_de_verficacion(user.correo, user.nombre, token)
     return user
 
 def get_usuario(session: Session, id_usuario: int):
@@ -62,14 +84,23 @@ def edit_usuario(session: Session, user_id: int, usuario_data: UsuarioUpdate, fo
             detail="Contraseña actual incorrecta"
         )
 
-    # Actualizar correo si lo  proporciona
-    if usuario_data.email is not None:
-        user.correo = usuario_data.email
-
     # Cambiar contraseña si nueva_contraseña fue enviada
     if usuario_data.new_password is not None:
         user.contraseña = pwd_context.hash(usuario_data.new_password)
 
+    if usuario_data.correo is not None:
+        existing = session.exec(
+            select(Usuario).where(Usuario.correo == usuario_data.correo, Usuario.id_usuario != user_id)
+        ).first()
+        if existing:
+            raise HTTPException(
+                status_code=400,
+                detail="El correo ya está registrado por otro usuario"
+            )
+        user.correo = usuario_data.correo
+        user.verificado = False
+        token = crear_token_de_verificacion(user.correo)
+        enviar_email_de_verficacion(user.correo, user.nombre, token)
     # Cambiar foto si fue enviada
     if foto is not None:
         extension = _validate_image_and_get_extension(foto)
@@ -96,6 +127,17 @@ def autenticar_usuario(session: Session, email: str, contraseña: str):
         return None
     if not verificar_contraseña(contraseña, usuario.contraseña):
         return None
+    return usuario
+
+def _require_verified_user_by_id(user_id: int, session: Session):
+    usuario = get_usuario(session, user_id)
+    if usuario is None:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if not usuario.verificado:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Debes verificar tu correo"
+        )
     return usuario
 
 # Problema
@@ -195,16 +237,17 @@ def edit_problema(
     enunciado_anterior = problema.enunciado
     enunciado_nuevo = problema_data.enunciado
 
-    expected_image_blocks = sum(1 for bloque in enunciado_nuevo if bloque.get("tipo") == "imagen" and not bloque.get("url", "").startswith("static/problema_imagenes"))
+    expected_image_blocks = sum(
+        1
+        for bloque in enunciado_nuevo
+        if bloque.get("tipo") == "imagen" and not (bloque.get("url") or "").strip()
+    )
     if len(imagenes) < expected_image_blocks:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Faltan imágenes. El enunciado requiere {expected_image_blocks} imágenes nuevas o reemplazadas, pero solo se recibieron {len(imagenes)}."
         )
-    if imagenes: 
-        enunciado_actualizado = _update_enunciado(enunciado_anterior, enunciado_nuevo, imagenes)
-    else:
-        enunciado_actualizado = enunciado_nuevo 
+    enunciado_actualizado = _update_enunciado(enunciado_anterior, enunciado_nuevo, imagenes)
     for campo in ["titulo", "materia", "tipo", "propietario", "dificultad", "carrera"]:
         valor = getattr(problema_data, campo)
         if valor:  
@@ -257,17 +300,18 @@ def edit_solucion(
      
     enunciado_anterior = solucion.contenido
     enunciado_nuevo = solucion_data.contenido
-    if imagenes:
-        expected_image_blocks = sum(1 for bloque in enunciado_nuevo if bloque.get("tipo") == "imagen" and not bloque.get("url", "").startswith("static/problema_imagenes"))
-        if len(imagenes) < expected_image_blocks:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Faltan imágenes. La solucion requiere {expected_image_blocks} imágenes nuevas o reemplazadas, pero solo se recibieron {len(imagenes)}."
-            )
-        
-        solucion_actualizado = _update_enunciado(enunciado_anterior, enunciado_nuevo, imagenes)
-    else:
-        solucion_actualizado = enunciado_nuevo 
+    expected_image_blocks = sum(
+        1
+        for bloque in enunciado_nuevo
+        if bloque.get("tipo") == "imagen" and not (bloque.get("url") or "").strip()
+    )
+    if len(imagenes) < expected_image_blocks:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Faltan imágenes. La solucion requiere {expected_image_blocks} imágenes nuevas o reemplazadas, pero solo se recibieron {len(imagenes)}."
+        )
+    
+    solucion_actualizado = _update_enunciado(enunciado_anterior, enunciado_nuevo, imagenes)
     if solucion_actualizado:
         solucion.contenido = solucion_actualizado
     session.commit()
@@ -345,7 +389,6 @@ def list_soluciones_por_usuario(session: Session, id_user: int, skip: int = 0, l
         .offset(skip)
         .limit(limit)
     ).all()
-
 
     soluciones_response: List[SolucionRead] = []
 

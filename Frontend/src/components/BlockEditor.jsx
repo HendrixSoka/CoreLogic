@@ -4,7 +4,6 @@ import { Box, Button, Flex, Text, VStack,HStack, Menu, MenuButton, MenuList, Men
   PopoverTrigger,
   PopoverContent,
   PopoverBody, } from '@chakra-ui/react';
-import { getImageUrl } from '../api/problemService';
 import BloqueTexto from './blocks/BloqueTexto';
 import BloqueImagen from './blocks/BloqueImagen';
 import BloqueCodigo from './blocks/BloqueCodigo';
@@ -27,20 +26,20 @@ const BlockRenderer = ({ contenido = [], onBlockChange = () => {}, onArchivo = (
   const editable = true;
 
   const handleChange = (index, cambio) => {
-  const nuevos = [...contenido];
+    const nuevos = [...contenido];
 
-  // Mezclamos el bloque actual con los cambios que vienen
-  nuevos[index] = { ...nuevos[index], ...cambio };
+    const { file, urlPreview, ...resto } = cambio;
 
-  // Si viene un archivo, actualizamos además la preview/nombre
-  if (cambio.file) {
-    nuevos[index].url = cambio.nombre;
-    nuevos[index].preview = cambio.urlPreview;
-    onArchivo(cambio.file);
-  }
+    nuevos[index] = {
+      ...nuevos[index],
+      ...resto,
+      ...(file && { preview: urlPreview, url: '' }),
+    };
 
-  onBlockChange(nuevos);
-};
+    if (file) onArchivo(file);
+
+    onBlockChange(nuevos);
+  };
 
   const handleDeleteBlock = (index) => {
     const copia = [...contenido];
@@ -136,7 +135,7 @@ const BlockRenderer = ({ contenido = [], onBlockChange = () => {}, onArchivo = (
           <BloqueImagen
             key={index}
             editable={editable}
-            url={bloque.preview || getImageUrl(bloque.url)}
+            url={bloque.preview || bloque.url}
             onChange={(cambio) => handleChange(index, cambio)}
           />
         );
@@ -166,7 +165,12 @@ const BlockRenderer = ({ contenido = [], onBlockChange = () => {}, onArchivo = (
               <Draggable draggableId={bloque.id} index={index} key={bloque.id}>
                 {(draggableProvided) => (
                   <Box
-                    ref={draggableProvided.innerRef}
+                    ref={(node) => {
+                      draggableProvided.innerRef(node);
+                      if (menuAbierto === index) {
+                        menuRef.current = node;
+                      }
+                    }}
                     {...draggableProvided.draggableProps}
                     {...draggableProvided.dragHandleProps}
                     onMouseEnter={() => setHoveredIndex(index)}
@@ -181,7 +185,6 @@ const BlockRenderer = ({ contenido = [], onBlockChange = () => {}, onArchivo = (
 
                           {menuAbierto === index && (
                             <Box
-                              ref={menuRef}
                               position="absolute"
                               top="40px"
                               left="20px"

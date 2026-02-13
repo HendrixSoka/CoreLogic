@@ -7,12 +7,15 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
-    IMAGE_UPLOAD_DIR: str = os.path.join(os.getcwd(),"static", "problema_imagenes")
-    USER_PHOTOS_DIR: str = os.path.join(os.getcwd(),"static",  "fotos_usuarios")
-    IMAGE_GET_DIR: str = "problema_imagenes"
-    USER_GET_DIR: str = "fotos_usuarios"
     DATABASE_URL: str
     CORS_ORIGINS : str
+    CLOUD_NAME:str
+    API_KEY:str
+    API_SECRET:str
+    MAIL_USERNAME: str
+    MAIL_PASSWORD: str
+    MAIL_FROM: str
+    VERIFY_EMAIL_BASE_URL: str
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()

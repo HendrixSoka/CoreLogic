@@ -63,16 +63,3 @@ export async function obtenerProblemasPorUsuario(id_user) {
     const response = await api.get(`/problemas/usuario/${id_user}`);
     return response.data;
 }
-
-///reemplazar en nuevas versiones por esto 
-/*
-export function getImageUrl(path) {
-  if (!path) return '';
-  return `${BACKEND_URL}/${path}`;
-}
-
-*/
-export function getImageUrl(path) {
-  if (!path) return '';
-  return `${BACKEND_URL}/${path.replace(/^static\//, '')}`;
-}

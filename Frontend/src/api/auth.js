@@ -33,6 +33,22 @@ export async function getMyUser(token) {
 
   return res.data;
 }
+
+export async function resendVerification(token) {
+  const res = await api.post('/verify/resend', null, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return res.data;
+}
+
+export async function verifyEmail(token) {
+  const res = await api.get('/verify', {
+    params: { token },
+  });
+  return res.data;
+}
 export async function updateUser(userId, usuarioData, foto = null) {
   try {
     const formData = new FormData();
@@ -77,4 +93,3 @@ export function getUserDataFromToken() {
     return null;
   }
 }
-

@@ -3,7 +3,6 @@ import { useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { getUserDataFromToken } from '../api/auth';
 import { crearSolucion } from '../api/solutionService';
-import { getImageUrl } from '../api/problemService';
 import BlockEditor from '../components/BlockEditor';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -28,8 +27,66 @@ export default function UploadSolutionPage() {
     setArchivos((prev) => [...prev, archivo]);
   };
 
+  const normalizarBloque = (bloque) => {
+    switch (bloque.tipo) {
+      case 'imagen':
+        return {
+          tipo: 'imagen',
+          nombre: bloque.nombre,
+          url: bloque.url, 
+        };
+
+      case 'texto':
+        return {
+          tipo: 'texto',
+          contenido: bloque.contenido,
+        };
+
+      case 'codigo':
+        return {
+          tipo: 'codigo',
+          lenguaje: bloque.lenguaje,
+          contenido: bloque.contenido,
+        };
+
+      case 'ecuacion':
+        return {
+          tipo: 'ecuacion',
+          contenido: bloque.contenido,
+        };
+
+      case 'lista':
+        return {
+          tipo: 'lista',
+          estilo: bloque.estilo,
+          items: bloque.items,
+        };
+
+      case 'tabla':
+        return {
+          tipo: 'tabla',
+          encabezados: bloque.encabezados,
+          filas: bloque.filas,
+        };
+
+      default:
+        return null;
+    }
+  };
+
   const handleSubmit = async () => {
-    const limpio = contenido.map(({ id, ...resto }) => resto);
+    if (!user || !user.id) {
+      toast({
+        title: 'Error crítico',
+        description: 'Usuario no autenticado. Por favor inicia sesión.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true
+      });
+      return;
+    }
+    const limpio = contenido.map(normalizarBloque).filter(Boolean);
+
 
     const solucionData = {
       id_problema,
