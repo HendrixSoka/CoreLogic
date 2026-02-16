@@ -12,10 +12,7 @@ class Settings(BaseSettings):
     CLOUD_NAME:str
     API_KEY:str
     API_SECRET:str
-    MAIL_USERNAME: str
-    MAIL_PASSWORD: str
-    MAIL_FROM: str
-    VERIFY_EMAIL_BASE_URL: str
+    GOOGLE_CLIENT_ID: str
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()

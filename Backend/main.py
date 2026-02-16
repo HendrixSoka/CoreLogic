@@ -1,17 +1,20 @@
 from fastapi import FastAPI, Depends, HTTPException, status,UploadFile, File,Form, Body
-from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm, HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi import Query
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests as google_requests
 from jose import JWTError, jwt
 import json
 from typing import List,Optional
-from sqlmodel import Session, select
+from sqlmodel import Session
 from database import create_db_and_tables, get_session
 from datetime import datetime, timedelta
 from crud import (
-    autenticar_usuario, crear_token_de_acceso,
-    create_usuario,edit_usuario, get_usuario, crear_token_de_verificacion,_require_verified_user_by_id,
+    crear_token_de_acceso,
+    edit_usuario, get_usuario,_require_verified_user_by_id,
+    get_or_create_google_usuario,
     create_problema, list_problemas, get_problema,edit_problema,get_problema_by_user,
     create_solucion, list_soluciones_por_problema, edit_solucion,list_soluciones_por_usuario,
     get_solucion_por_id, like_solucion, dislike_solucion,
@@ -19,14 +22,12 @@ from crud import (
 )
 from schema import (
     Token,
-    UsuarioCreate,UsuarioUpdate, UsuarioRead,LoginSchema,
+    UsuarioUpdate, UsuarioRead,GoogleLoginSchema,
     ProblemaCreate, ProblemaRead,ProblemaReadList,ProblemaReadListResponse, ProblemaUpdate,
     SolucionCreate, SolucionRead,SolucionUpdate,SolucionListResponse
 )
 import os
 from config import settings
-from model import Usuario
-from email_service import enviar_email_de_verficacion
 
 security = HTTPBearer()
 app = FastAPI()
@@ -43,10 +44,6 @@ app.add_middleware(
 def read_root():
     return {"message": "Hola mundo"}
 
-@app.post("/register", response_model=UsuarioRead)
-async def register(usuario: UsuarioCreate, session: Session = Depends(get_session)):
-    return await create_usuario(session, usuario)
-
 @app.put("/usuarios/{user_id}")
 async def update_usuario(
     user_id: int,
@@ -59,8 +56,6 @@ async def update_usuario(
         return usuario_actualizado
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 def _get_usuario_from_credentials(
     credentials: HTTPAuthorizationCredentials,
@@ -94,18 +89,46 @@ def _get_usuario_from_credentials(
 def get_me(credentials: HTTPAuthorizationCredentials = Depends(security), session: Session = Depends(get_session)):
     return _get_usuario_from_credentials(credentials, session)
 
-@app.post("/login", response_model=Token)
-def login(
-    login_data: LoginSchema = Body(...),
+@app.post("/auth/google", response_model=Token)
+def login_with_google(
+    login_data: GoogleLoginSchema = Body(...),
     session: Session = Depends(get_session)
 ):
-    usuario = autenticar_usuario(session, login_data.email, login_data.password)
-    if not usuario:
+    try:
+        payload = google_id_token.verify_oauth2_token(
+            login_data.id_token,
+            google_requests.Request(),
+            settings.GOOGLE_CLIENT_ID,
+        )
+    except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales incorrectas",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="Token de Google inválido"
         )
+
+    issuer = payload.get("iss")
+    if issuer not in ("accounts.google.com", "https://accounts.google.com"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Emisor inválido"
+        )
+
+    correo = payload.get("email")
+    email_verified = payload.get("email_verified", False)
+    if not correo or not email_verified:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cuenta de Google no verificada"
+        )
+
+    nombre = payload.get("name") or correo.split("@")[0]
+    foto = payload.get("picture")
+    usuario = get_or_create_google_usuario(
+        session=session,
+        correo=correo,
+        nombre=nombre,
+        foto=foto
+    )
     expires = timedelta(days=30) if login_data.remember_me else timedelta(minutes=60)
     token = crear_token_de_acceso(
         data={
@@ -114,37 +137,7 @@ def login(
         },
         expires_delta=expires
     )
-    
     return {"access_token": token, "token_type": "bearer"}
-
-@app.get("/verify")
-def verify_account(token: str, session: Session = Depends(get_session)):
-    try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        correo = payload["sub"]
-    except JWTError:
-        raise HTTPException(400, "Token inválido")
-    user = session.exec(
-        select(Usuario).where(Usuario.correo == correo)
-    ).first()
-    if not user:
-        raise HTTPException(404, "Usuario no encontrado")
-    user.verificado = True
-    session.add(user)
-    session.commit()
-    return {"message": "Cuenta verificada exitosamente"}
-
-@app.post("/verify/resend")
-async def resend_verification_email(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    session: Session = Depends(get_session)
-):
-    usuario = _get_usuario_from_credentials(credentials, session)
-    if usuario.verificado:
-        return {"message": "La cuenta ya está verificada"}
-    token = crear_token_de_verificacion(usuario.correo)
-    await enviar_email_de_verficacion(usuario.correo, token)
-    return {"message": "Correo de verificación reenviado"}
 
 @app.post("/problemas/")
 async def crear_problema_endpoint(

@@ -4,12 +4,10 @@ import {
   Flex,
   Heading,
   Link as ChakraLink,
-  useColorModeValue,
-  useToast
+  useColorModeValue
 } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { getMyUser, getUserDataFromToken, resendVerification } from '../api/auth';
+import { getUserDataFromToken } from '../api/auth';
 
 export default function Header({ onLogout }) {
   const bgHeader = useColorModeValue('white', 'gray.700');
@@ -20,46 +18,6 @@ export default function Header({ onLogout }) {
   const btnGreenBg = useColorModeValue('green.300', 'green.600');
   const btnGreenHover = useColorModeValue('green.400', 'green.700');
   const user = getUserDataFromToken();
-  const [userInfo, setUserInfo] = useState(null);
-  const [isResending, setIsResending] = useState(false);
-  const toast = useToast();
-
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-
-  useEffect(() => {
-    if (!token) {
-      setUserInfo(null);
-      return;
-    }
-    getMyUser(token)
-      .then((data) => setUserInfo(data))
-      .catch(() => setUserInfo(null));
-  }, [token]);
-
-  const handleResend = () => {
-    if (!token) return;
-    setIsResending(true);
-    resendVerification(token)
-      .then((res) => {
-        toast({
-          title: res?.message || "Correo reenviado",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-          variant: "subtle",
-        });
-      })
-      .catch(() => {
-        toast({
-          title: "No se pudo reenviar el correo",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-          variant: "subtle",
-        });
-      })
-      .finally(() => setIsResending(false));
-  };
 
   return (
     <Box px={{ base: 3, md: 10 }} py={4}>
@@ -100,22 +58,6 @@ export default function Header({ onLogout }) {
               >
                 {user.nombre}
               </ChakraLink>
-              {userInfo && userInfo.verificado === false && (
-                <Button
-                  onClick={handleResend}
-                  isLoading={isResending}
-                  loadingText="Reenviando..."
-                  bg="orange.300"
-                  color="black"
-                  px={4}
-                  py={2}
-                  rounded="2xl"
-                  w={{ base: '100%', sm: 'auto' }}
-                  _hover={{ bg: 'orange.400' }}
-                >
-                  No verificado · Reenviar
-                </Button>
-              )}
               <Button
                 onClick={onLogout}
                 bg={btnBg}

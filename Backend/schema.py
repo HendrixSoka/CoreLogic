@@ -57,6 +57,10 @@ class LoginSchema(BaseModel):
     password: str
     remember_me: bool = False
 
+class GoogleLoginSchema(BaseModel):
+    id_token: str
+    remember_me: bool = False
+
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"

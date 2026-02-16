@@ -1,26 +1,15 @@
 import api from './axiosInstance';
 import { jwtDecode } from 'jwt-decode';
 
-export async function registerUser(datos) {
-  const res = await api.post('/register', datos);
-  return res.data;
-}
-
-export async function loginUser({ email, password, rememberMe }) {
-  console.log({ email, password, rememberMe });
-  const response = await api.post('/login', {
-    email: email, 
-    password: password,
-    remember_me: rememberMe
+export async function loginWithGoogle({ idToken }) {
+  const response = await api.post('/auth/google', {
+    id_token: idToken,
+    remember_me: true,
   });
 
   const token = response.data.access_token;
-
-  if (rememberMe) {
-    localStorage.setItem('token', token);
-  } else {
-    sessionStorage.setItem('token', token);
-  }
+  localStorage.setItem('token', token);
+  sessionStorage.removeItem('token');
   return response.data;
 }
 
@@ -31,22 +20,6 @@ export async function getMyUser(token) {
     },
   });
 
-  return res.data;
-}
-
-export async function resendVerification(token) {
-  const res = await api.post('/verify/resend', null, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  return res.data;
-}
-
-export async function verifyEmail(token) {
-  const res = await api.get('/verify', {
-    params: { token },
-  });
   return res.data;
 }
 export async function updateUser(userId, usuarioData, foto = null) {

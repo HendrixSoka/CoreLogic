@@ -20,7 +20,6 @@ from jose import jwt
 import os
 from utils import _save_single_upload_file,_validate_image_and_get_extension,_update_enunciado,_process_image_blocks
 from pathlib import Path
-from email_service import enviar_email_de_verficacion
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # Usuario
 def crear_token_de_acceso(data: dict, expires_delta: timedelta = None):
@@ -28,15 +27,6 @@ def crear_token_de_acceso(data: dict, expires_delta: timedelta = None):
     expire = datetime.utcnow() + (expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
-
-def crear_token_de_verificacion(email: str):
-
-    payload = {
-        "sub": email,
-        "exp": datetime.utcnow() + timedelta(hours=24)
-    }
-
-    return jwt.encode(payload, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 async def create_usuario(session: Session, usuario_data: UsuarioCreate):
     existing = session.exec(
@@ -54,6 +44,7 @@ async def create_usuario(session: Session, usuario_data: UsuarioCreate):
         nombre=usuario_data.name,
         correo=usuario_data.email,
         contraseña=hashed_password,
+        verificado=True,
         aportaciones=0,
         publicaciones=0,
         foto=None 
@@ -63,8 +54,6 @@ async def create_usuario(session: Session, usuario_data: UsuarioCreate):
     session.add(user)
     session.commit()
     session.refresh(user)
-    token = crear_token_de_verificacion(user.correo)
-    await enviar_email_de_verficacion(user.correo, user.nombre, token)
     return user
 
 def get_usuario(session: Session, id_usuario: int):
@@ -98,9 +87,7 @@ def edit_usuario(session: Session, user_id: int, usuario_data: UsuarioUpdate, fo
                 detail="El correo ya está registrado por otro usuario"
             )
         user.correo = usuario_data.correo
-        user.verificado = False
-        token = crear_token_de_verificacion(user.correo)
-        enviar_email_de_verficacion(user.correo, user.nombre, token)
+        user.verificado = True
     # Cambiar foto si fue enviada
     if foto is not None:
         extension = _validate_image_and_get_extension(foto)
@@ -129,15 +116,42 @@ def autenticar_usuario(session: Session, email: str, contraseña: str):
         return None
     return usuario
 
+def get_or_create_google_usuario(
+    session: Session,
+    correo: str,
+    nombre: str,
+    foto: Optional[str] = None
+):
+    usuario = session.exec(select(Usuario).where(Usuario.correo == correo)).first()
+    if usuario:
+        usuario.verificado = True
+        if foto:
+            usuario.foto = foto
+        session.add(usuario)
+        session.commit()
+        session.refresh(usuario)
+        return usuario
+
+    random_password = uuid4().hex
+    hashed_password = pwd_context.hash(random_password)
+    nuevo_usuario = Usuario(
+        nombre=nombre,
+        correo=correo,
+        contraseña=hashed_password,
+        verificado=True,
+        aportaciones=0,
+        publicaciones=0,
+        foto=foto
+    )
+    session.add(nuevo_usuario)
+    session.commit()
+    session.refresh(nuevo_usuario)
+    return nuevo_usuario
+
 def _require_verified_user_by_id(user_id: int, session: Session):
     usuario = get_usuario(session, user_id)
     if usuario is None:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    if not usuario.verificado:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Debes verificar tu correo"
-        )
     return usuario
 
 # Problema

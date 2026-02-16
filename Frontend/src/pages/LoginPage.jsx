@@ -1,33 +1,27 @@
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { loginUser } from '../api/auth';
-import { useState } from 'react';
+import { loginWithGoogle } from '../api/auth';
 import {
   Box,
-  Button,
-  Checkbox,
-  FormControl,
-  FormLabel,
+  Badge,
+  HStack,
   Heading,
-  Input,
   Link,
   Stack,
   Text,
   useColorModeValue,
   useToast,
 } from '@chakra-ui/react';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [pass, setPass] = useState('');
-  const [remember, setRemember] = useState(false);
   const toast = useToast();
 
-  const handleLogin = () => {
-    loginUser({ email, password: pass, rememberMe: remember })
+  const handleGoogleLogin = (idToken) => {
+    loginWithGoogle({ idToken })
       .then(() => {
         toast({
-          title: "¡Logueado con éxito!",
+          title: "¡Sesión iniciada con Google!",
           status: "success",
           duration: 3000,
           isClosable: true,
@@ -37,7 +31,7 @@ export default function LoginPage() {
       })
       .catch(() => {
         toast({
-          title: "Error al iniciar sesión",
+          title: "Error al iniciar con Google",
           status: "error",
           duration: 3000,
           isClosable: true,
@@ -52,66 +46,53 @@ export default function LoginPage() {
       display="flex"
       alignItems="center"
       justifyContent="center"
-      bg={useColorModeValue('gray.50', 'gray.800')}
+      bgGradient={useColorModeValue(
+        'linear(to-br, blue.50, cyan.50)',
+        'linear(to-br, gray.900, gray.800)'
+      )}
       px={4}
+      py={10}
     >
       <Box
         bg={useColorModeValue('white', 'gray.700')}
-        p={8}
-        rounded="lg"
-        shadow="md"
+        p={10}
+        rounded="2xl"
+        shadow="xl"
         w="100%"
-        maxW="400px"
+        maxW="500px"
+        border="1px solid"
+        borderColor={useColorModeValue('blue.100', 'whiteAlpha.200')}
       >
-        <Stack spacing={4}>
-          <Heading size="md" textAlign="center" color="blue.600">
-            Te damos la bienvenida de nuevo
+        <Stack spacing={6}>
+          <HStack justify="center">
+            <Badge colorScheme="blue" px={3} py={1} rounded="full">
+              Acceso seguro
+            </Badge>
+          </HStack>
+
+          <Heading size="lg" textAlign="center" color="blue.600">
+            Inicia sesión con Google
           </Heading>
 
-          <FormControl>
-            <FormLabel>Correo Electrónico</FormLabel>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="correo@ejemplo.com"
-              focusBorderColor="blue.400"
-            />
-          </FormControl>
+          <Text textAlign="center" color="gray.500">
+            Tu sesión quedará guardada automáticamente en este navegador.
+          </Text>
 
-          <FormControl>
-            <FormLabel>Contraseña</FormLabel>
-            <Input
-              type="password"
-              value={pass}
-              onChange={(e) => setPass(e.target.value)}
-              placeholder="********"
-              focusBorderColor="blue.400"
-            />
-          </FormControl>
+          <GoogleAuthButton onSuccess={handleGoogleLogin} />
 
-          <Checkbox
-            isChecked={remember}
-            onChange={(e) => setRemember(e.target.checked)}
-            colorScheme="blue"
+          <Box
+            bg={useColorModeValue('blue.50', 'whiteAlpha.100')}
+            rounded="xl"
+            p={4}
           >
-            Recuérdame por un mes
-          </Checkbox>
-
-          <Button
-            colorScheme="blue"
-            onClick={handleLogin}
-            size="md"
-            mt={2}
-          >
-            Iniciar Sesión
-          </Button>
-
-          <Text textAlign="center" color="gray.500">o</Text>
+            <Text fontSize="sm" color="gray.600" textAlign="center">
+              Entra en segundos, sin contraseña y con verificación de Google.
+            </Text>
+          </Box>
 
           <Text textAlign="center">
             <Link as={RouterLink} to="/register" color="blue.500">
-              Registrarse
+              Crear cuenta con Google
             </Link>
           </Text>
         </Stack>
