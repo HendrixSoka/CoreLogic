@@ -58,7 +58,7 @@ const ProblemFilters = ({ onChangeFiltros }) => {
   }, [filtros.carrera]);
   useEffect(() => {
     onChangeFiltros({
-      carrera: carreraSeleccionada?.value || null,
+      carrera: carreraSeleccionada?.label || null,
       materia: materiaSeleccionada?.value || null,
     });
   }, [carreraSeleccionada, materiaSeleccionada]);

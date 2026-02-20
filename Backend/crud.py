@@ -212,14 +212,15 @@ def list_problemas(
     if carrera:
         query = query.where(Problema.carrera == carrera)
 
-    query = query.offset(skip).limit(limit)
+    count_query = select(func.count()).select_from(query.subquery())
+    total = session.execute(count_query).scalar()
 
-    resultados = session.execute(query).scalars().all()
+    paginated_query = query.offset(skip).limit(limit)
+    resultados = session.execute(paginated_query).scalars().all()
 
-    # Si tu response_model espera un total o paginación extra:
     return {
         "items": resultados,
-        "total": len(resultados)  # o un count real si quieres paginación precisa
+        "total": total
     }
 
 def get_problema_by_user(session: Session, id_user: int, skip: int = 0, limit: int = 10):

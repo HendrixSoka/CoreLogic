@@ -2,8 +2,11 @@
 import {
   Box,
   Button,
+  Center,
   Flex,
+  Spinner,
   Stack,
+  Text,
   useColorModeValue,
   useToast
 } from '@chakra-ui/react';
@@ -21,6 +24,7 @@ export default function HomePage() {
   const [problemas, setProblemas] = useState([]);
   const [total, setTotal] = useState(0);
   const [pagina, setPagina] = useState(1);
+  const [cargando, setCargando] = useState(false);
   const limit = 10;
   const [filtros, setFiltros] = useState({
     titulo: '',
@@ -32,6 +36,7 @@ export default function HomePage() {
 
   useEffect(() => {
     const cargarProblemas = async () => {
+      setCargando(true);
       try {
         const { items, total } = await listarProblemas({
           skip: (pagina - 1) * limit,
@@ -49,6 +54,8 @@ export default function HomePage() {
           duration: 5000,
           isClosable: true,
         });
+      } finally {
+        setCargando(false);
       }
     };
 
@@ -69,28 +76,83 @@ export default function HomePage() {
       <Stack spacing={6}>
         <Box bg={bgHeader} p={4} rounded="2xl" shadow="sm" border="1px" borderColor="gray.100">
           <ProblemFilters onChangeFiltros={onChangeFiltros} />
-          <ProblemTable problemas={problemas} />
+          {cargando ? (
+            <Center py={12} flexDirection="column" gap={3}>
+              <Spinner size="xl" color="blue.400" thickness="4px" />
+              <Text color="gray.600" textAlign="center">
+                Cargando problemas... el sistema puede estar despertando.
+              </Text>
+            </Center>
+          ) : (
+            <ProblemTable problemas={problemas} />
+          )}
         </Box>
 
-        <Flex justify="center" mt={4} gap={2} flexWrap="wrap">
-          {Array.from({ length: totalPaginas }, (_, i) => (
+        <Flex justify="center" mt={4} gap={2} flexWrap="wrap" opacity={cargando ? 0.5 : 1}>
+          {/** Primera página siempre */}
+          {pagina > 3 && (
             <Button
-              key={i}
-              onClick={() => setPagina(i + 1)}
+              onClick={() => setPagina(1)}
+              isDisabled={cargando}
               px={4}
               py={2}
               rounded="xl"
               border="1px"
-              borderColor={pagina === i + 1 ? btnSelectedBg : 'blue.200'}
-              bg={pagina === i + 1 ? btnSelectedBg : 'white'}
-              color={pagina === i + 1 ? btnSelectedColor : 'blue.500'}
-              _hover={{
-                bg: pagina === i + 1 ? btnSelectedBg : 'blue.100',
-              }}
+              borderColor={pagina === 1 ? btnSelectedBg : 'blue.200'}
+              bg={pagina === 1 ? btnSelectedBg : 'white'}
+              color={pagina === 1 ? btnSelectedColor : 'blue.500'}
             >
-              {i + 1}
+              1
             </Button>
-          ))}
+          )}
+
+          {/** “…” si hay salto antes del rango */}
+          {pagina > 4 && <Box px={2}>...</Box>}
+
+          {/** Botones del rango dinámico */}
+          {Array.from({ length: 5 }, (_, i) => {
+            const num = pagina - 2 + i; // rango: pagina-2 .. pagina+2
+            if (num < 1 || num > totalPaginas) return null;
+            return (
+              <Button
+                key={num}
+                onClick={() => setPagina(num)}
+                isDisabled={cargando}
+                px={4}
+                py={2}
+                rounded="xl"
+                border="1px"
+                borderColor={pagina === num ? btnSelectedBg : 'blue.200'}
+                bg={pagina === num ? btnSelectedBg : 'white'}
+                color={pagina === num ? btnSelectedColor : 'blue.500'}
+                _hover={{
+                  bg: pagina === num ? btnSelectedBg : 'blue.100',
+                }}
+              >
+                {num}
+              </Button>
+            );
+          })}
+
+          {/** “…” si hay salto después del rango */}
+          {pagina < totalPaginas - 3 && <Box px={2}>...</Box>}
+
+          {/** Última página siempre */}
+          {pagina < totalPaginas - 2 && (
+            <Button
+              onClick={() => setPagina(totalPaginas)}
+              isDisabled={cargando}
+              px={4}
+              py={2}
+              rounded="xl"
+              border="1px"
+              borderColor={pagina === totalPaginas ? btnSelectedBg : 'blue.200'}
+              bg={pagina === totalPaginas ? btnSelectedBg : 'white'}
+              color={pagina === totalPaginas ? btnSelectedColor : 'blue.500'}
+            >
+              {totalPaginas}
+            </Button>
+          )}
         </Flex>
       </Stack>
     </Box>
