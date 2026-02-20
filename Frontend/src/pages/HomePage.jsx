@@ -73,24 +73,67 @@ export default function HomePage() {
         </Box>
 
         <Flex justify="center" mt={4} gap={2} flexWrap="wrap">
-          {Array.from({ length: totalPaginas }, (_, i) => (
+          {/** Primera página siempre */}
+          {pagina > 3 && (
             <Button
-              key={i}
-              onClick={() => setPagina(i + 1)}
+              onClick={() => setPagina(1)}
               px={4}
               py={2}
               rounded="xl"
               border="1px"
-              borderColor={pagina === i + 1 ? btnSelectedBg : 'blue.200'}
-              bg={pagina === i + 1 ? btnSelectedBg : 'white'}
-              color={pagina === i + 1 ? btnSelectedColor : 'blue.500'}
-              _hover={{
-                bg: pagina === i + 1 ? btnSelectedBg : 'blue.100',
-              }}
+              borderColor={pagina === 1 ? btnSelectedBg : 'blue.200'}
+              bg={pagina === 1 ? btnSelectedBg : 'white'}
+              color={pagina === 1 ? btnSelectedColor : 'blue.500'}
             >
-              {i + 1}
+              1
             </Button>
-          ))}
+          )}
+
+          {/** “…” si hay salto antes del rango */}
+          {pagina > 4 && <Box px={2}>...</Box>}
+
+          {/** Botones del rango dinámico */}
+          {Array.from({ length: 5 }, (_, i) => {
+            const num = pagina - 2 + i; // rango: pagina-2 .. pagina+2
+            if (num < 1 || num > totalPaginas) return null;
+            return (
+              <Button
+                key={num}
+                onClick={() => setPagina(num)}
+                px={4}
+                py={2}
+                rounded="xl"
+                border="1px"
+                borderColor={pagina === num ? btnSelectedBg : 'blue.200'}
+                bg={pagina === num ? btnSelectedBg : 'white'}
+                color={pagina === num ? btnSelectedColor : 'blue.500'}
+                _hover={{
+                  bg: pagina === num ? btnSelectedBg : 'blue.100',
+                }}
+              >
+                {num}
+              </Button>
+            );
+          })}
+
+          {/** “…” si hay salto después del rango */}
+          {pagina < totalPaginas - 3 && <Box px={2}>...</Box>}
+
+          {/** Última página siempre */}
+          {pagina < totalPaginas - 2 && (
+            <Button
+              onClick={() => setPagina(totalPaginas)}
+              px={4}
+              py={2}
+              rounded="xl"
+              border="1px"
+              borderColor={pagina === totalPaginas ? btnSelectedBg : 'blue.200'}
+              bg={pagina === totalPaginas ? btnSelectedBg : 'white'}
+              color={pagina === totalPaginas ? btnSelectedColor : 'blue.500'}
+            >
+              {totalPaginas}
+            </Button>
+          )}
         </Flex>
       </Stack>
     </Box>
