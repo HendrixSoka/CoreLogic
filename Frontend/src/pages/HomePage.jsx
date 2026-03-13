@@ -10,12 +10,15 @@ import {
   useColorModeValue,
   useToast
 } from '@chakra-ui/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { listarProblemas } from '../api/problemService';
 import ProblemTable from '../components/ProblemTable';
 import ProblemFilters from '../components/ProblemFilters';
 
 export default function HomePage() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const bgMain = useColorModeValue('blue.50', 'blue.900');
   const bgHeader = useColorModeValue('white', 'gray.700');
   const btnSelectedBg = useColorModeValue('blue.400', 'blue.600');
@@ -33,6 +36,94 @@ export default function HomePage() {
     dificultad: '',
     carrera: '',
   });
+
+  const parsePath = useMemo(() => {
+    const decode = (val) => (val ? decodeURIComponent(val) : '');
+    const path = location.pathname.replace(/^\/HomePage\/?/, '');
+    const parts = path.split('/').filter(Boolean);
+    const filtros = { carrera: '', materia: '', tipo: '', dificultad: '', titulo: '' };
+    let page = 1;
+    for (let i = 0; i < parts.length; i += 2) {
+      const key = parts[i];
+      const val = parts[i + 1];
+      if (!val) break;
+      if (key === 'page') {
+        const num = Number.parseInt(val, 10);
+        if (!Number.isNaN(num) && num > 0) page = num;
+        break;
+      }
+      if (key in filtros) filtros[key] = decode(val);
+    }
+    return { filtros, page };
+  }, [location.pathname]);
+
+  const buildPath = (nextPage, nextFiltros) => {
+    let path = '/HomePage';
+    if (nextFiltros.carrera) {
+      path += `/carrera/${encodeURIComponent(nextFiltros.carrera)}`;
+      if (nextFiltros.materia) {
+        path += `/materia/${encodeURIComponent(nextFiltros.materia)}`;
+      }
+    }
+    if (nextFiltros.tipo) path += `/tipo/${encodeURIComponent(nextFiltros.tipo)}`;
+    if (nextFiltros.dificultad) path += `/dificultad/${encodeURIComponent(nextFiltros.dificultad)}`;
+    if (nextFiltros.titulo) path += `/titulo/${encodeURIComponent(nextFiltros.titulo)}`;
+    path += `/page/${nextPage}`;
+    return path;
+  };
+
+  useEffect(() => {
+    console.log('Ruta actual:', location.pathname);
+    const rawPath = location.pathname.replace(/\/+$/, '');
+    if (rawPath === '/HomePage') {
+      try {
+        const last = sessionStorage.getItem('home:lastPath');
+        console.log('Último path guardado:', last);
+        if (last && last !== rawPath) {
+          navigate(last, { replace: true });
+        }
+      } catch {}
+    }
+  }, [location.pathname, navigate]);
+
+  useEffect(() => {
+    if (!location.pathname.startsWith('/HomePage')) return;
+    if (!location.pathname.includes('/page/')) return;
+    try {
+      sessionStorage.setItem('home:lastPath', location.pathname);
+    } catch {}
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const next = parsePath.page;
+    if (!next || next < 1) {
+      navigate(buildPath(1, parsePath.filtros), { replace: true });
+      return;
+    }
+    if (next !== pagina) setPagina(next);
+    setFiltros((prev) => {
+      const carreraNext = parsePath.filtros.carrera || '';
+      const materiaNext = parsePath.filtros.materia || '';
+      const tipoNext = parsePath.filtros.tipo || '';
+      const dificultadNext = parsePath.filtros.dificultad || '';
+      const tituloNext = parsePath.filtros.titulo || '';
+      if (
+        prev.carrera === carreraNext &&
+        prev.materia === materiaNext &&
+        prev.titulo === tituloNext &&
+        prev.tipo === tipoNext &&
+        prev.dificultad === dificultadNext
+      ) return prev;
+      return {
+        ...prev,
+        carrera: carreraNext,
+        materia: materiaNext,
+        titulo: tituloNext,
+        tipo: tipoNext,
+        dificultad: dificultadNext,
+      };
+    });
+  }, [parsePath, pagina, navigate]);
 
   useEffect(() => {
     const cargarProblemas = async () => {
@@ -64,10 +155,17 @@ export default function HomePage() {
 
   const onChangeFiltros = (nuevosFiltros) => {
     setPagina(1);
+    navigate(buildPath(1, nuevosFiltros));
     setFiltros((prev) => ({ ...prev, ...nuevosFiltros }));
   };
 
-  const totalPaginas = Math.ceil(total / limit);
+  const totalPaginas = Math.max(1, Math.ceil(total / limit));
+
+  const irPagina = (num) => {
+    if (num < 1 || num > totalPaginas || num === pagina) return;
+    setPagina(num);
+    navigate(buildPath(num, filtros));
+  };
 
   return (
     <Box minH="100vh" bg={bgMain} p={6}>
@@ -75,7 +173,7 @@ export default function HomePage() {
 
       <Stack spacing={6}>
         <Box bg={bgHeader} p={4} rounded="2xl" shadow="sm" border="1px" borderColor="gray.100">
-          <ProblemFilters onChangeFiltros={onChangeFiltros} />
+          <ProblemFilters onChangeFiltros={onChangeFiltros} initialFiltros={filtros} />
           {cargando ? (
             <Center py={12} flexDirection="column" gap={3}>
               <Spinner size="xl" color="blue.400" thickness="4px" />
@@ -92,7 +190,7 @@ export default function HomePage() {
           {/** Primera página siempre */}
           {pagina > 3 && (
             <Button
-              onClick={() => setPagina(1)}
+              onClick={() => irPagina(1)}
               isDisabled={cargando}
               px={4}
               py={2}
@@ -116,7 +214,7 @@ export default function HomePage() {
             return (
               <Button
                 key={num}
-                onClick={() => setPagina(num)}
+                onClick={() => irPagina(num)}
                 isDisabled={cargando}
                 px={4}
                 py={2}
@@ -140,7 +238,7 @@ export default function HomePage() {
           {/** Última página siempre */}
           {pagina < totalPaginas - 2 && (
             <Button
-              onClick={() => setPagina(totalPaginas)}
+              onClick={() => irPagina(totalPaginas)}
               isDisabled={cargando}
               px={4}
               py={2}

@@ -9,8 +9,14 @@ import {
   AccordionIcon,
   VStack,
 } from '@chakra-ui/react';
+import { useEffect } from 'react';
+import { despertarBackend } from '../api/options';
 
 export default function HelpPage (){
+  useEffect(() => {
+    despertarBackend();
+  }, []);
+
   return (
     <Box maxW="4xl" mx="auto" px={6} py={10}>
       <VStack spacing={8} align="stretch">
@@ -43,7 +49,7 @@ export default function HelpPage (){
           <Text textAlign="justify">
             Para ver las soluciones propuestas, no necesitas registrarte. Sin embargo, si quieres subir 
             ejercicios o contribuir con soluciones, sí es necesario crear una cuenta.
-            puedes registrarte con tu correo y un nombre de usuario. Una vez dentro,
+            puedes registrarte con tu cuenta google. Una vez dentro,
             puedes subir nuevos ejercicios o contribuir con soluciones.
           </Text>
           <Text textAlign="justify" mt={2}>

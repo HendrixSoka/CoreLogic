@@ -47,9 +47,7 @@ const ProblemTable = ({ problemas = []}) => {
             <Tr
               key={p.id_problema}
               _hover={{ bg: hoverBg, cursor: 'pointer' }}
-              onClick={
-                () => navigate(`/ejercicio/${p.id_problema}`) 
-              }
+              onClick={() => navigate(`/ejercicio/${p.id_problema}`)}
             >
               <Td textAlign="center" color={textColor}>{idx + 1}</Td>
               <Td>

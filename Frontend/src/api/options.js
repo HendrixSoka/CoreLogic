@@ -29,3 +29,17 @@ export async function obtenerMateriasPorCarrera(carreraId) {
     return [];
   }
 }
+
+/**
+ * Llama al endpoint raíz para "despertar" el backend.
+ * @returns {Promise<{ message: string }|null>}
+ */
+export async function despertarBackend() {
+  try {
+    const response = await api.get('/');
+    return response.data;
+  } catch (error) {
+    console.error('Error al despertar backend:', error);
+    return null;
+  }
+}

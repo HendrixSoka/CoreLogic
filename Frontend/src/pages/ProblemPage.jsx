@@ -42,9 +42,9 @@ export default function ProblemPage() {
 
   if (loading)
     return (
-      <Text color="gray.500">
-        <Spinner mr={2} /> Cargando problema...
-      </Text>
+      <Flex align="center" color="gray.500" gap={2}>
+        <Spinner /> <Text as="span">Cargando problema...</Text>
+      </Flex>
     );
 
   if (!problema)
