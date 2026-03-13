@@ -13,7 +13,7 @@ export default function AppRoutes() {
   return (
       <Routes>
         <Route path='/' element={<HelpPage/>}/>
-        <Route path="/HomePage" element={<HomePage />} />
+        <Route path="/HomePage/*" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/ejercicio/:id_problema" element={<ExercisePage />} />
