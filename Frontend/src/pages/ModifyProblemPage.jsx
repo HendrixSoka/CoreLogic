@@ -144,7 +144,6 @@ export default function ModifyProblemPage() {
       tipo,
       dificultad,
       propietario: propietario || user.nombre,
-      id_usuario: user.id,
     };
 
     try {

@@ -2,8 +2,8 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BlockRenderer from './BlockRenderer';
 import { listarSoluciones } from '../api/solutionService';
-import { getUserDataFromToken } from '../api/auth';
 import {likeSolucion, dislikeSolucion} from '../api/solutionService'
+import { useAuth } from '../context/AuthContext';
 import {
   Box,
   Button,
@@ -24,7 +24,7 @@ const SolucionList = ({ id, tipo = 'usuario' }) => {
   const [cargando, setCargando] = useState(false);
   const loaderRef = useRef(null);
   const navigate = useNavigate();
-  const user = getUserDataFromToken();
+  const { user } = useAuth();
 
   useEffect(() => {
     setSoluciones([]);
@@ -73,6 +73,34 @@ const SolucionList = ({ id, tipo = 'usuario' }) => {
     setAbiertas((prev) => ({ ...prev, [id_sol]: !prev[id_sol] }));
   };
 
+  const actualizarReacciones = (idSolucion, data) => {
+    setSoluciones((prev) =>
+      prev.map((sol) =>
+        sol.id_solucion === idSolucion
+          ? { ...sol, likes: data.likes, dislikes: data.dislikes }
+          : sol
+      )
+    );
+  };
+
+  const handleLike = async (idSolucion) => {
+    try {
+      const data = await likeSolucion(idSolucion);
+      actualizarReacciones(idSolucion, data);
+    } catch (error) {
+      console.error('Error al dar like:', error);
+    }
+  };
+
+  const handleDislike = async (idSolucion) => {
+    try {
+      const data = await dislikeSolucion(idSolucion);
+      actualizarReacciones(idSolucion, data);
+    } catch (error) {
+      console.error('Error al dar dislike:', error);
+    }
+  };
+
   const bgHeader = useColorModeValue('gray.100', 'gray.700');
   const bgHeaderHover = useColorModeValue('gray.200', 'gray.600');
 
@@ -98,7 +126,7 @@ const SolucionList = ({ id, tipo = 'usuario' }) => {
                 onClick={() => toggle(sol.id_solucion)}
                 flex={1}
               >
-                {abiertas[sol.id_solucion] ? '▾' : '▸'} {sol.nombre} {sol.id_solucion}
+                {abiertas[sol.id_solucion] ? '▾' : '▸'} {sol.nombre}
               </Button>
               {esDelUsuario && (
                 <Button
@@ -124,7 +152,7 @@ const SolucionList = ({ id, tipo = 'usuario' }) => {
                     leftIcon={<ArrowUpIcon />}
                     variant="ghost"
                     colorScheme="green"
-                    onClick={() => likeSolucion(sol.id_solucion, user.id_usuario)}
+                    onClick={() => handleLike(sol.id_solucion)}
                   >
                     {sol.likes ?? 0}
                   </Button>
@@ -133,7 +161,7 @@ const SolucionList = ({ id, tipo = 'usuario' }) => {
                     leftIcon={<ArrowDownIcon />}
                     variant="ghost"
                     colorScheme="red"
-                    onClick={() => dislikeSolucion(sol.id_solucion, user.id_usuario)}
+                    onClick={() => handleDislike(sol.id_solucion)}
                   >
                     {sol.dislikes ?? 0}
                   </Button>

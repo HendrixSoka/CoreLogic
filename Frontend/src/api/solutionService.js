@@ -49,7 +49,11 @@ export async function editarSolucion(solucionData, imagenes = []) {
 }
 
 export async function listarSoluciones({ id, tipo = "usuario", skip = 0, limit = 10 }) {
-  const response = await api.get(`/soluciones/${tipo}/${id}?skip=${skip}&limit=${limit}`);
+  const endpoint =
+    tipo === 'usuario'
+      ? '/soluciones/usuario'
+      : `/soluciones/${tipo}/${id}`;
+  const response = await api.get(`${endpoint}?skip=${skip}&limit=${limit}`);
   return response.data;
 }
 
@@ -60,17 +64,13 @@ export async function obtenerSolucionPorId(solucionId) {
 }
 
 // Dar like a una solución
-export async function likeSolucion(solucionId, usuarioId) {
-  const response = await api.post(`/soluciones/${solucionId}/like`, {
-    usuario_id: usuarioId, 
-  });
+export async function likeSolucion(solucionId) {
+  const response = await api.post(`/soluciones/${solucionId}/like`);
   return response.data; 
 }
 
 // Dar dislike a una solución
-export async function dislikeSolucion(solucionId, usuarioId) {
-  const response = await api.post(`/soluciones/${solucionId}/dislike`, {
-    usuario_id: usuarioId, 
-  });
+export async function dislikeSolucion(solucionId) {
+  const response = await api.post(`/soluciones/${solucionId}/dislike`);
   return response.data;
 }

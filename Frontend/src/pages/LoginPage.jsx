@@ -12,14 +12,17 @@ import {
   useToast,
 } from '@chakra-ui/react';
 import GoogleAuthButton from '../components/GoogleAuthButton';
+import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const toast = useToast();
+  const { refreshAuth } = useAuth();
 
   const handleGoogleLogin = (idToken) => {
     loginWithGoogle({ idToken })
-      .then(() => {
+      .then(async () => {
+        await refreshAuth();
         toast({
           title: "¡Sesión iniciada con Google!",
           status: "success",

@@ -1,76 +1,44 @@
 import {
+  Avatar,
   Box,
   Button,
   FormControl,
   FormLabel,
+  Heading,
   Input,
   Text,
   VStack,
-  HStack,
-  Avatar,
   useToast,
-  Heading,
 } from "@chakra-ui/react";
-import { useState } from "react";
-import { updateUser } from '../api/auth'
-import { useEffect } from "react";
-const ModifyUser = ({ usuario=null }) => {
-  const toast = useToast();
+import { useEffect, useState } from "react";
+import { updateUser } from "../api/auth";
 
-  const [form, setForm] = useState({
-    email: "",
-    oldPassword: "",
-    newPassword: "",
-    confirmPassword :""
-  });
+const ModifyUser = ({ usuario = null }) => {
+  const toast = useToast();
+  const [nombre, setNombre] = useState("");
+  const [foto, setFoto] = useState(null);
+  const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
     if (usuario) {
-      setForm((prev) => ({
-        ...prev,
-        email: usuario.correo || "",
-      }));
+      setNombre(usuario.nombre || "");
     }
   }, [usuario]);
 
-  const [foto, setFoto] = useState(null);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-    if (name === "confirmPassword") {
-      handleConfirmPassword();
-    }
-  };
-
   const handleFotoChange = (e) => {
-    setFoto(e.target.files[0]);
+    setFoto(e.target.files[0] || null);
   };
 
-  const handleConfirmPassword = () => {
-    if (form.newPassword !== form.confirmPassword) {
-      setForm((prev) => ({
-        ...prev,
-        newPassword: "",
-        confirmPassword: "",
-      }));
-      toast({
-        title: "Error",
-        description: error?.message || "Las contraseñas no coinciden. Por favor, vuelve a ingresarlas.",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-    } 
-  };
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      await updateUser(usuario.id_usuario, {
-        email: form.email,
-        password: form.oldPassword,
-        new_password: form.newPassword,
-      }, foto);
+      setGuardando(true);
+      await updateUser(
+        usuario.id_usuario,
+        { nombre: nombre.trim() },
+        foto
+      );
 
       toast({
         title: "Perfil actualizado",
@@ -82,102 +50,71 @@ const ModifyUser = ({ usuario=null }) => {
     } catch (error) {
       toast({
         title: "Error",
-        description: error?.message || "No se pudo actualizar el perfil.",
+        description: error?.detail || "No se pudo actualizar el perfil.",
         status: "error",
         duration: 3000,
         isClosable: true,
       });
+    } finally {
+      setGuardando(false);
     }
   };
 
   return (
-    <Box bg="blue.50" minH="100vh" p={6} display="flex" justifyContent="center" alignItems="center">
-      <Box
-        as="form"
-        onSubmit={handleSubmit}
-        bg="white"
-        p={8}
-        rounded="xl"
-        boxShadow="lg"
-        maxW="4xl"
-        w="100%"
-        display="grid"
-        gridTemplateColumns={{ base: "1fr", md: "1fr 1fr" }}
-        gap={8}
-      >
-        <VStack spacing={4} align="stretch">
-          <Heading fontSize="2xl" color="gray.700">Perfil de {usuario.username}</Heading>
+    <Box
+      bg="white"
+      p={8}
+      rounded="xl"
+      boxShadow="lg"
+      maxW="4xl"
+      w="100%"
+      mx="auto"
+      display="grid"
+      gridTemplateColumns={{ base: "1fr", md: "1fr 1fr" }}
+      gap={8}
+      as="form"
+      onSubmit={handleSubmit}
+    >
+      <VStack spacing={4} align="stretch">
+        <Heading fontSize="2xl" color="gray.700">
+          Perfil de {usuario?.nombre}
+        </Heading>
 
-          <FormControl>
-            <FormLabel>Email</FormLabel>
-            <Input
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              type="email"
-              bg="gray.50"
-            />
-            
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>Contraseña actual</FormLabel>
-            <Input
-              name="oldPassword"
-              value={form.oldPassword}
-              onChange={handleChange}
-              type="password"
-              bg="gray.50"
-            />
-            <Text fontSize="sm" color="gray.500">
-              Es nesesario para cualquier tipo de cambio 
-            </Text>
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>Nueva contraseña</FormLabel>
-            <Input
-              name="newPassword"
-              value={form.newPassword}
-              onChange={handleChange}
-              type="password"
-              bg="gray.50"
-            />
-            <Text fontSize="sm" color="gray.500">
-              Déjalo en blanco si no quieres cambiar la contraseña
-            </Text>
-          </FormControl>
-
-          <FormControl>
-            <FormLabel>Confirmar nueva contraseña</FormLabel>
-            <Input
-              name="confirmPassword"
-              value={form.confirmPassword}
-              onChange={handleChange}
-              type="password"
-              bg="gray.50"
-            />
-          </FormControl>
-
-          <Button type="submit" colorScheme="blue" mt={4}>
-            Guardar cambios
-          </Button>
-        </VStack>
-
-        <VStack spacing={4} align="center" justify="center">
-          <Avatar
-            size="2xl"
-            name={usuario.username}
-            src={usuario.fotoURL || undefined}
+        <FormControl>
+          <FormLabel>Nombre</FormLabel>
+          <Input
+            value={nombre}
+            onChange={(e) => setNombre(e.target.value)}
+            bg="gray.50"
           />
-          <FormLabel htmlFor="foto" cursor="pointer" color="blue.500" _hover={{ textDecoration: "underline" }}>
-            Cambiar foto
-            <Input id="foto" type="file" onChange={handleFotoChange} display="none" />
-          </FormLabel>
-        </VStack>
-      </Box>
+          <Text fontSize="sm" color="gray.500" mt={2}>
+            Puedes cambiar tu nombre visible y tu foto de perfil.
+          </Text>
+        </FormControl>
+
+        <Button type="submit" colorScheme="blue" mt={4} isLoading={guardando}>
+          Guardar cambios
+        </Button>
+      </VStack>
+
+      <VStack spacing={4} align="center" justify="center">
+        <Avatar
+          size="2xl"
+          name={usuario?.nombre}
+          src={foto ? URL.createObjectURL(foto) : (usuario?.foto || undefined)}
+        />
+        <FormLabel
+          htmlFor="foto"
+          cursor="pointer"
+          color="blue.500"
+          _hover={{ textDecoration: "underline" }}
+        >
+          Cambiar foto
+          <Input id="foto" type="file" onChange={handleFotoChange} display="none" />
+        </FormLabel>
+      </VStack>
     </Box>
   );
-}
+};
 
 export default ModifyUser;

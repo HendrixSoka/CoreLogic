@@ -140,7 +140,6 @@ export default function UploadProblemPage() {
       tipo,
       dificultad,
       propietario: propietario || user.nombre,
-      id_usuario: user.id,
     });
     console.log('Archivos a enviar:', archivo);
     const problemaData = {
@@ -151,7 +150,6 @@ export default function UploadProblemPage() {
       tipo,
       dificultad,
       propietario: propietario || user.nombre,
-      id_usuario: user.id,
     };
 
     try {

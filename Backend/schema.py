@@ -52,6 +52,18 @@ class DificultadEnum(str, Enum):
     Media = "Media"
     Dificil = "Dificil"
 
+
+class EstadoProblemaEnum(str, Enum):
+    Pendiente = "Pendiente"
+    Aprobado = "Aprobado"
+    Eliminado = "Eliminado"
+
+
+class EstadoSolucionEnum(str, Enum):
+    Visible = "Visible"
+    Reportado = "Reportado"
+    Eliminado = "Eliminado"
+
 class LoginSchema(BaseModel):
     email: str
     password: str
@@ -64,6 +76,31 @@ class GoogleLoginSchema(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class AsignarRolRequest(BaseModel):
+    id_usuario: int
+    rol: str = "Admin"
+
+
+class RevokeRolRequest(BaseModel):
+    id_usuario: int
+
+
+class UserRolRead(BaseModel):
+    id_usuario: int
+    nombre: str
+    correo: str
+    foto: Optional[str]
+    is_admin: bool
+
+    class Config:
+        from_attributes = True
+
+
+class UserRolListResponse(BaseModel):
+    total: int
+    items: List[UserRolRead]
 
 class UsuarioCreate(BaseModel):
     name: str
@@ -84,14 +121,10 @@ class UsuarioRead(BaseModel):
 class UsuarioUpdate:
     def __init__(
         self,
-        email: Optional[str] = Form(None),
-        new_password: Optional[str] = Form(None),
-        password: str = Form(...), 
+        nombre: Optional[str] = Form(None),
         photo: str = Form(None)
     ):
-        self.email = email
-        self.new_password = new_password
-        self.password = password
+        self.nombre = nombre
         self.photo = photo
 
 
@@ -104,7 +137,6 @@ class ProblemaCreate:
         propietario: str = Form(None),
         dificultad: DificultadEnum= Form(...),
         carrera: str= Form(...),
-        id_usuario: str = Form(...),
         enunciado: str = Form(...),
     ):
         self.titulo = titulo
@@ -113,7 +145,6 @@ class ProblemaCreate:
         self.propietario = propietario
         self.dificultad = dificultad
         self.carrera = carrera
-        self.id_usuario = int(id_usuario) if id_usuario and id_usuario.strip() != "" else None
         self.enunciado = None
 
         if enunciado:
@@ -132,7 +163,6 @@ class ProblemaUpdate:
         propietario: Optional[str] = Form(None),
         dificultad: Optional[DificultadEnum] = Form(None),
         carrera: Optional[str] = Form(None),
-        id_usuario: Optional[str] = Form(None),
         enunciado: Optional[str] = Form(None),
     ):
         self.titulo = titulo
@@ -141,7 +171,6 @@ class ProblemaUpdate:
         self.propietario = propietario
         self.dificultad = dificultad
         self.carrera = carrera
-        self.id_usuario = int(id_usuario) if id_usuario and id_usuario.strip() != "" else None
         self.enunciado = None
 
         if enunciado:
@@ -160,6 +189,7 @@ class ProblemaReadList(BaseModel):
     dificultad: Optional[DificultadEnum] = None
     carrera: str
     id_usuario: int
+    estado: EstadoProblemaEnum
     class Config:
         from_attributes = True
 
@@ -174,11 +204,9 @@ class SolucionCreate():
     def __init__(
         self,
         id_problema :int = Form(...),
-        id_usuario : int = Form(...),
         contenido : str = Form(...)
     ):
         self.id_problema = id_problema
-        self.id_usuario = id_usuario
         try:
             bloques_raw = json.loads(contenido)
             bloques_validados = parse_obj_as(List[Bloque], bloques_raw)
@@ -208,6 +236,7 @@ class SolucionRead(BaseModel):
     likes: int
     dislikes: int
     fecha: datetime
+    estado: EstadoSolucionEnum
 
 class SolucionListResponse(BaseModel):
     items: List[SolucionRead]

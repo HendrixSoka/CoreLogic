@@ -1,5 +1,4 @@
 import api from './axiosInstance';
-const BACKEND_URL = import.meta.env.VITE_API_URL
 export async function crearProblema(problemaData, imagenes = []) {
     const formData = new FormData();
      
@@ -56,10 +55,5 @@ export async function listarProblemas({ skip = 0, limit = 20, titulo, materia, t
 
 export async function obtenerProblemaPorId(id) {
     const response = await api.get(`/problemas/${id}`);
-    return response.data;
-}
-
-export async function obtenerProblemasPorUsuario(id_user) {
-    const response = await api.get(`/problemas/usuario/${id_user}`);
     return response.data;
 }

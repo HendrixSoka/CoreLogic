@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { getUserDataFromToken } from '../api/auth';
 import { obtenerSolucionPorId, editarSolucion } from '../api/solutionService';
 import BlockEditor from '../components/BlockEditor';
@@ -17,16 +17,19 @@ import {
 
 export default function ModifySolutionPage() {
   const { id_solucion } = useParams();
+  const navigate = useNavigate();
   const user = getUserDataFromToken();
   const [contenido, setContenido] = useState([]);
   const [archivos, setArchivos] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [guardando, setGuardando] = useState(false);
+  const [idProblema, setIdProblema] = useState(null);
   const toast = useToast();
   useEffect(() => {
     const cargarSolucion = async () => {
       try {
         const solucion = await obtenerSolucionPorId(id_solucion);
+        setIdProblema(solucion.id_problema);
         const bloques = solucion.contenido.map((bloque) => ({
           id: uuidv4(),
           ...bloque,
@@ -93,7 +96,6 @@ export default function ModifySolutionPage() {
 
     const solucionData = {
       id_solucion,
-      id_usuario: user.id,
       contenido: JSON.stringify(limpio),
     };
 
@@ -105,6 +107,11 @@ export default function ModifySolutionPage() {
         description: 'Solucion modificado correctamente',
         status: 'success',
         isClosable: true,
+        onCloseComplete: () => {
+          if (idProblema) {
+            navigate(`/ejercicio/${idProblema}`);
+          }
+        },
       });
     } catch (error) {
       toast({

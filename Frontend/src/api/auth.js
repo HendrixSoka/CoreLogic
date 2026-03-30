@@ -13,31 +13,38 @@ export async function loginWithGoogle({ idToken }) {
   return response.data;
 }
 
-export async function getMyUser(token) {
-  const res = await api.get('/usuarios/me', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
+export async function getMyUser() {
+  const res = await api.get('/usuarios/me');
   return res.data;
 }
+
+export async function getUserApprovedProblems({ skip = 0, limit = 10 } = {}) {
+  const res = await api.get('/problemas/usuario/aprobados', {
+    params: { skip, limit },
+  });
+  return res.data;
+}
+
+export async function getUserPendingProblems({ skip = 0, limit = 10 } = {}) {
+  const res = await api.get('/problemas/usuario/pendientes', {
+    params: { skip, limit },
+  });
+  return res.data;
+}
+
 export async function updateUser(userId, usuarioData, foto = null) {
   try {
     const formData = new FormData();
 
-    // Agrega cada campo del usuario al FormData
     for (const key in usuarioData) {
-      if(usuarioData[key]!= "" && usuarioData[key]!= undefined && usuarioData[key]!=null)
+      if (usuarioData[key] !== "" && usuarioData[key] !== undefined && usuarioData[key] !== null) {
         formData.append(key, usuarioData[key]);
+      }
     }
     if (foto) {
       formData.append('foto', foto);
     }
 
-    for (const [key, value] of formData.entries()) {
-      console.log(key, value);
-    }
     const response = await api.put(`/usuarios/${userId}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',

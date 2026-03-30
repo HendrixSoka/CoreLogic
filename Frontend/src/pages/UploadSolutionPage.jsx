@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { getUserDataFromToken } from '../api/auth';
 import { crearSolucion } from '../api/solutionService';
@@ -15,6 +15,7 @@ import {
 
 export default function UploadSolutionPage() {
   const { id_problema } = useParams();
+  const navigate = useNavigate();
   const user = getUserDataFromToken();
   const [contenido, setContenido] = useState([
     { id: uuidv4(), tipo: 'texto', contenido: '' }
@@ -90,7 +91,6 @@ export default function UploadSolutionPage() {
 
     const solucionData = {
       id_problema,
-      id_usuario: user.id,
       contenido: JSON.stringify(limpio),
     };
 
@@ -103,6 +103,7 @@ export default function UploadSolutionPage() {
         status: 'success',
         duration: 3000,
         isClosable: true,
+        onCloseComplete: () => navigate(`/ejercicio/${id_problema}`),
       });
     } catch (error) {
       chakraToast({

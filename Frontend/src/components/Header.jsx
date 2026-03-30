@@ -7,7 +7,7 @@ import {
   useColorModeValue
 } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
-import { getUserDataFromToken } from '../api/auth';
+import { useAuth } from '../context/AuthContext';
 
 export default function Header({ onLogout }) {
   const bgHeader = useColorModeValue('white', 'gray.700');
@@ -17,7 +17,7 @@ export default function Header({ onLogout }) {
   const btnBgHover = useColorModeValue('blue.400', 'blue.700');
   const btnGreenBg = useColorModeValue('green.300', 'green.600');
   const btnGreenHover = useColorModeValue('green.400', 'green.700');
-  const user = getUserDataFromToken();
+  const { user } = useAuth();
 
   return (
     <Box px={{ base: 3, md: 10 }} py={4}>
