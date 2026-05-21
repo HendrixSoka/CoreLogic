@@ -4,69 +4,73 @@ import {
   Flex,
   Heading,
   Link as ChakraLink,
-  useColorModeValue
+  Text,
 } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Header({ onLogout }) {
-  const bgHeader = useColorModeValue('white', 'gray.700');
-  const borderColor = useColorModeValue('blue.100', 'blue.700');
-  const textBlue = useColorModeValue('blue.500', 'blue.200');
-  const btnBg = useColorModeValue('blue.300', 'blue.600');
-  const btnBgHover = useColorModeValue('blue.400', 'blue.700');
-  const btnGreenBg = useColorModeValue('green.300', 'green.600');
-  const btnGreenHover = useColorModeValue('green.400', 'green.700');
   const { user } = useAuth();
 
   return (
-    <Box px={{ base: 3, md: 10 }} py={4}>
+    <Box px={{ base: 4, md: 8 }} py={{ base: 4, md: 5 }}>
       <Flex
         direction={{ base: 'column', md: 'row' }}
         justify="space-between"
         align={{ base: 'stretch', md: 'center' }}
-        gap={{ base: 3, md: 4 }}
-        bg={bgHeader}
-        shadow="sm"
-        rounded="2xl"
+        gap={{ base: 4, md: 5 }}
+        bgGradient="linear(90deg, #6D28D9, #7C3AED, #5B21B6)"
+        boxShadow="0 4px 20px rgba(109,40,217,0.2)"
+        rounded="18px"
         maxW="7xl"
         mx="auto"
-        px={{ base: 3, md: 6 }}
-        py={{ base: 3, md: 4 }}
-        mb={6}
-        border="1px"
-        borderColor={borderColor}
+        px={{ base: 5, md: 7 }}
+        py={{ base: 5, md: 5 }}
+        mb={3}
       >
-        <Heading as="h1" size={{ base: 'lg', md: 'xl' }} color={textBlue} fontWeight="bold" textAlign={{ base: 'center', md: 'left' }}>
-          EjerciciosFNI
-        </Heading>
+        <Box>
+          <Heading
+            as="h1"
+            size={{ base: 'xl', md: '2xl' }}
+            color="white"
+            fontWeight="800"
+            textAlign={{ base: 'center', md: 'left' }}
+          >
+            EjerciciosFNI
+          </Heading>
+          <Text mt={1} color="whiteAlpha.900" fontSize={{ base: 'sm', md: 'md' }} textAlign={{ base: 'center', md: 'left' }}>
+            Repositorio académico.
+          </Text>
+        </Box>
         <Flex align="center" gap={3} wrap="wrap" justify={{ base: 'center', md: 'flex-end' }}>
           {user ? (
             <>
               <ChakraLink
                 as={Link}
                 to="/perfil"
-                color={textBlue}
-                border="1px"
-                borderColor="blue.300"
+                color="white"
+                border="1px solid"
+                borderColor="whiteAlpha.400"
+                bg="whiteAlpha.200"
                 px={4}
                 py={2}
-                rounded="2xl"
+                rounded="18px"
                 w={{ base: '100%', sm: 'auto' }}
                 textAlign="center"
-                _hover={{ bg: 'blue.100' }}
+                fontWeight="700"
+                _hover={{ bg: 'whiteAlpha.300', textDecoration: 'none' }}
               >
                 {user.nombre}
               </ChakraLink>
               <Button
                 onClick={onLogout}
-                bg={btnBg}
+                bg="#6D28D9"
                 color="white"
                 px={4}
                 py={2}
-                rounded="2xl"
+                rounded="18px"
                 w={{ base: '100%', sm: 'auto' }}
-                _hover={{ bg: btnBgHover }}
+                _hover={{ bg: '#5B21B6', transform: 'translateY(-1px)' }}
               >
                 Cerrar sesión
               </Button>
@@ -76,28 +80,30 @@ export default function Header({ onLogout }) {
               <ChakraLink
                 as={Link}
                 to="/login"
-                color={textBlue}
-                border="1px"
-                borderColor="blue.300"
+                color="white"
+                border="1px solid"
+                borderColor="whiteAlpha.400"
+                bg="whiteAlpha.200"
                 px={4}
                 py={2}
-                rounded="2xl"
+                rounded="18px"
                 w={{ base: '100%', sm: 'auto' }}
                 textAlign="center"
-                _hover={{ bg: 'blue.100' }}
+                fontWeight="700"
+                _hover={{ bg: 'whiteAlpha.300', textDecoration: 'none' }}
               >
                 Iniciar Sesión
               </ChakraLink>
               <Button
                 as={Link}
                 to="/register"
-                bg={btnBg}
-                color="white"
+                bg="white"
+                color="#6D28D9"
                 px={4}
                 py={2}
-                rounded="2xl"
+                rounded="18px"
                 w={{ base: '100%', sm: 'auto' }}
-                _hover={{ bg: btnBgHover }}
+                _hover={{ bg: '#F5F3FF', transform: 'translateY(-1px)' }}
               >
                 Registrar
               </Button>
@@ -107,50 +113,50 @@ export default function Header({ onLogout }) {
       </Flex>
 
       <Flex
-        gap={{ base: 2, md: 4 }}
+        gap={{ base: 3, md: 4 }}
         wrap="wrap"
         maxW="7xl"
         mx="auto"
-        px={{ base: 2, md: 6 }}
-        mb={4}
+        px={{ base: 1, md: 2 }}
+        mb={2}
         justify={{ base: 'center', md: 'start' }}
       >
         <Button
           as={Link}
           to="/HomePage"
-          bg={btnBg}
+          bg="#6D28D9"
           color="white"
           px={4}
           py={2}
-          rounded="xl"
+          rounded="18px"
           w={{ base: '100%', sm: 'auto' }}
-          _hover={{ bg: btnBgHover }}
+          _hover={{ bg: '#5B21B6', transform: 'translateY(-1px)' }}
         >
           Problemas
         </Button>
         <Button
           as={Link}
           to="/subir-ejercicio"
-          bg={btnGreenBg}
+          bg="#8B5CF6"
           color="white"
           px={4}
           py={2}
-          rounded="xl"
+          rounded="18px"
           w={{ base: '100%', sm: 'auto' }}
-          _hover={{ bg: btnGreenHover }}
+          _hover={{ bg: '#6D28D9', transform: 'translateY(-1px)' }}
         >
           Subir Problema
         </Button>
         <Button
           as={Link}
           to="/"
-          bg="cyan.500"
-          color="white"
+          bg="white"
+          color="#6D28D9"
           px={4}
           py={2}
-          rounded="xl"
+          rounded="18px"
           w={{ base: '100%', sm: 'auto' }}
-          _hover={{ bg: "cyan.600" }}
+          _hover={{ bg: '#F5F3FF', transform: 'translateY(-1px)' }}
         >
           Comenzar
         </Button>

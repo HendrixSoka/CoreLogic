@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Badge,
   Table,
   Thead,
   Tbody,
@@ -17,10 +18,12 @@ const ProblemTable = ({ problemas = [], customBasePath = '/ejercicio' }) => {
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
-  const hoverBg = useColorModeValue('blue.50', 'blue.900');
-  const headerBg = useColorModeValue('blue.100', 'blue.700');
-  const borderColor = useColorModeValue('blue.200', 'blue.600');
+  const tableBg = useColorModeValue('#FCFAFF', 'gray.800');
+  const hoverBg = useColorModeValue('#F3EEFF', 'purple.900');
+  const headerBg = useColorModeValue('linear-gradient(90deg, #6D28D9, #7C3AED)', 'purple.800');
+  const borderColor = useColorModeValue('brand.200', 'purple.700');
   const textColor = useColorModeValue('gray.700', 'gray.100');
+  const mutedTextColor = useColorModeValue('brand.900', 'white');
 
   useEffect(() => {
     const node = containerRef.current;
@@ -50,45 +53,60 @@ const ProblemTable = ({ problemas = [], customBasePath = '/ejercicio' }) => {
       <Table
         variant="simple"
         size={{ base: 'sm', md: 'md' }}
-        bg="white"
+        bg={tableBg}
         border="1px solid"
         borderColor={borderColor}
-        borderRadius="lg"
-        boxShadow="sm"
+        borderRadius="18px"
+        boxShadow="0 8px 24px rgba(109,40,217,0.12)"
+        overflow="hidden"
       >
         <Thead bg={headerBg}>
           <Tr>
-            <Th>#</Th>
-            <Th>Título</Th>
-            <Th>Materia</Th>
-            {showTipo && <Th>Tipo</Th>}
-            {showDificultad && <Th>Dificultad</Th>}
-            {showCarrera && <Th>Carrera</Th>}
-            {showPropietario && <Th>Propietario</Th>}
+            <Th color="white" borderColor="whiteAlpha.300" py={4} fontSize="xs" letterSpacing="0.08em">#</Th>
+            <Th color="white" borderColor="whiteAlpha.300" py={4} fontSize="xs" letterSpacing="0.08em">Título</Th>
+            <Th color="white" borderColor="whiteAlpha.300" py={4} fontSize="xs" letterSpacing="0.08em">Materia</Th>
+            {showTipo && <Th color="white" borderColor="whiteAlpha.300" py={4} fontSize="xs" letterSpacing="0.08em">Tipo</Th>}
+            {showDificultad && <Th color="white" borderColor="whiteAlpha.300" py={4} fontSize="xs" letterSpacing="0.08em">Dificultad</Th>}
+            {showCarrera && <Th color="white" borderColor="whiteAlpha.300" py={4} fontSize="xs" letterSpacing="0.08em">Carrera</Th>}
+            {showPropietario && <Th color="white" borderColor="whiteAlpha.300" py={4} fontSize="xs" letterSpacing="0.08em">Propietario</Th>}
           </Tr>
         </Thead>
         <Tbody>
           {problemas.map((p, idx) => (
             <Tr
               key={p.id_problema}
+              transition="background 0.3s ease"
               _hover={{ bg: hoverBg, cursor: 'pointer' }}
               onClick={() => navigate(`${customBasePath}/${p.id_problema}`)}
             >
-              <Td textAlign="center" color={textColor}>{idx + 1}</Td>
+              <Td textAlign="center" color={mutedTextColor} borderColor={borderColor}>{idx + 1}</Td>
               <Td>
-                <Text color={textColor} maxW={{ base: '180px', md: '320px' }} noOfLines={1}>
+                <Text color={textColor} fontWeight="700" maxW={{ base: '180px', md: '320px' }} noOfLines={1}>
                   {p.titulo}
                 </Text>
               </Td>
-              <Td color={textColor}>
+              <Td color={textColor} borderColor={borderColor}>
                 <Text maxW={{ base: '140px', md: '220px' }} noOfLines={1}>
                   {p.materia}
                 </Text>
               </Td>
-              {showTipo && <Td color={textColor}>{p.tipo}</Td>}
-              {showDificultad && <Td color={textColor}>{p.dificultad || '—'}</Td>}
-              {showCarrera && <Td color={textColor}>{p.carrera}</Td>}
-              {showPropietario && <Td color={textColor}>{p.propietario}</Td>}
+              {showTipo && (
+                <Td color={textColor} borderColor={borderColor}>
+                  <Badge
+                    bg="brand.50"
+                    color="brand.800"
+                    px={3}
+                    py={1}
+                    rounded="full"
+                    textTransform="none"
+                  >
+                    {p.tipo}
+                  </Badge>
+                </Td>
+              )}
+              {showDificultad && <Td color={textColor} borderColor={borderColor}>{p.dificultad || '—'}</Td>}
+              {showCarrera && <Td color={textColor} borderColor={borderColor}>{p.carrera}</Td>}
+              {showPropietario && <Td color={textColor} borderColor={borderColor}>{p.propietario}</Td>}
             </Tr>
           ))}
         </Tbody>
